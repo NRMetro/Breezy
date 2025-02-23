@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -32,7 +33,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             BreezyTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    FrontScreen(context = this,modifier = Modifier.padding(innerPadding))
+                    FrontScreen(Modifier.padding(innerPadding))
                 }
             }
         }
@@ -40,8 +41,8 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun FrontScreen(context: Context, modifier: Modifier) {
-
+fun FrontScreen(modifier: Modifier) {
+    val context = LocalContext.current
     Column(
         modifier = modifier
     ){
@@ -104,7 +105,7 @@ fun FrontScreen(context: Context, modifier: Modifier) {
                 }
             }
             Column{
-                
+
                 val image = painterResource(R.drawable.sun)
                 Image(
                     painter = image,
@@ -122,13 +123,13 @@ fun FrontScreen(context: Context, modifier: Modifier) {
     }
 }
 
-//@Preview(showBackground = true)
-//@Composable
-//fun FrontPreview(){
-//    BreezyTheme {
-//        FrontScreen(context = Context)
-//    }
-//}
+@Preview(showBackground = true)
+@Composable
+fun FrontPreview(){
+    BreezyTheme {
+        FrontScreen(modifier = Modifier)
+    }
+}
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
