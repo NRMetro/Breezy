@@ -1,6 +1,6 @@
 package com.example.breezy
 
-import android.graphics.Paint.Align
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -14,24 +14,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.statusBarsPadding
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.breezy.ui.theme.BreezyTheme
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.paddingFrom
-import androidx.compose.foundation.layout.size
-import androidx.compose.ui.focus.focusModifier
-import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.unit.sp
-import org.intellij.lang.annotations.JdkConstants.HorizontalAlignment
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -40,10 +32,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             BreezyTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Greeting(
-                        name = "Android",
-                        modifier = Modifier.padding(innerPadding)
-                    )
+                    FrontScreen(context = this,modifier = Modifier.padding(innerPadding))
                 }
             }
         }
@@ -51,11 +40,10 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun FrontScreen(){
+fun FrontScreen(context: Context, modifier: Modifier) {
+
     Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .statusBarsPadding()
+        modifier = modifier
     ){
         Row(
             Modifier
@@ -64,7 +52,7 @@ fun FrontScreen(){
                 .padding(6.dp)
         ){
             Text(
-                text = "Breezy"
+                text = context.getString(R.string.app_name)
             )
         }
 
@@ -75,7 +63,7 @@ fun FrontScreen(){
             horizontalArrangement = Arrangement.Center
         ) {
             Text(
-                text = "Excelsior, MN"
+                text = context.getString(R.string.location)
             )
         }
 
@@ -93,23 +81,30 @@ fun FrontScreen(){
                         .padding(start = 12.dp, bottom = 18.dp)
 
                 ){
+                    val temp = context.getString(R.string.temp)
                     Text(
-                        text = "72°",
+                        text = "$temp°",
                         fontSize = 60.sp
                     )
+                    val feelsLike = context.getString(R.string.feels_like)
                     Text(
-                        text = "Feels like 78°",
+                        text = "Feels like $feelsLike°",
                         modifier = Modifier.padding(start = 6.dp,top = 4.dp)
                     )
                 }
+                val low = context.getString(R.string.low)
+                val high = context.getString(R.string.high)
+                val humidity = context.getString(R.string.humidity)
+                val pressure = context.getString(R.string.pressure)
                 Column{
-                    Text("Low 65°")
-                    Text("High 80°")
-                    Text("Humidity 98%")
-                    Text("Pressure 1234 hPa")
+                    Text("Low $low°")
+                    Text("High $high°")
+                    Text("Humidity $humidity%")
+                    Text("Pressure $pressure hPa")
                 }
             }
             Column{
+                
                 val image = painterResource(R.drawable.sun)
                 Image(
                     painter = image,
@@ -127,13 +122,13 @@ fun FrontScreen(){
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun FrontPreview(){
-    BreezyTheme {
-        FrontScreen()
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun FrontPreview(){
+//    BreezyTheme {
+//        FrontScreen(context = Context)
+//    }
+//}
 
 @Composable
 fun Greeting(name: String, modifier: Modifier = Modifier) {
