@@ -1,10 +1,11 @@
 <resources>
     <string name="app_name">Breezy</string>
-    <string name="location">Excelsior, MN</string>
-    <string name="temp">72</string>
-    <string name="feels_like">78</string>
-    <string name="low">65</string>
-    <string name="high">80</string>
-    <string name="humidity">100</string>
-    <string name="pressure">1234</string>
+    <string name="temp">°F</string>
+    <string name="feels_like">Feels like&#160;</string>
+    <string name="low">Low&#160;</string>
+    <string name="high">High&#160;</string>
+    <string name="humidity">Humidity&#160;</string>
+    <string name="percent">%</string>
+    <string name="pressure">Pressure&#160;</string>
+    <string name="pressureUnit">&#160;hPa</string>
 </resources>
