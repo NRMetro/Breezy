@@ -8,4 +8,6 @@
     <string name="percent">%</string>
     <string name="pressure">Pressure&#160;</string>
     <string name="pressureUnit">&#160;hPa</string>
+    <string name="latitude">30.26</string>
+    <string name="longitude">-97.74</string>
 </resources>

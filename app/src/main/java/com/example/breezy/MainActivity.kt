@@ -38,7 +38,9 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         val weatherService = createRetrofitService()
         val apiKey = resources.getString(R.string.weather_api_key)
-        val viewModel = WeatherViewModel(weatherService,apiKey)
+        val latitude = resources.getString(R.string.latitude).toDouble()
+        val longitude = resources.getString(R.string.longitude).toDouble()
+        val viewModel = WeatherViewModel( weatherService,apiKey,latitude,longitude)
         viewModel.fetchWeather()
         setContent {
             BreezyTheme {

@@ -11,13 +11,15 @@ import retrofit2.Response
 
 class WeatherViewModel (
     private val weatherService: WeatherService,
-    private val apiKey :String
+    private val apiKey :String,
+    private val latitude :Double,
+    private val longitude :Double
 ):ViewModel() {
     private var _weather: MutableLiveData<CurrentWeather> = MutableLiveData()
     val weather: LiveData<CurrentWeather> = _weather
 
     fun fetchWeather(){
-        val call = weatherService.getWeather(latitude = 44.90, longitude = -93.56,apiKey = apiKey, unitType = "imperial")
+        val call = weatherService.getWeather(latitude = latitude, longitude = longitude,apiKey = apiKey, unitType = "imperial")
         call.enqueue(object: Callback<CurrentWeather>{
             override fun onResponse(p0: Call<CurrentWeather>, p1: Response<CurrentWeather>) {
                 _weather.value = p1.body()
