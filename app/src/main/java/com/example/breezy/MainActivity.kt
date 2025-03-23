@@ -58,10 +58,7 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun WeatherScreen(viewModel: WeatherViewModel) {
-
-    val currentWeather by viewModel.weather.observeAsState()
-
+fun AppHeader(){
     val context = LocalContext.current
 
     Row(
@@ -74,20 +71,40 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
             text = context.getString(R.string.app_name)
         )
     }
+}
 
+@Composable
+fun CityName(currentWeather: CurrentWeather){
     Row(
         Modifier
             .fillMaxWidth()
             .padding(8.dp),
         horizontalArrangement = Arrangement.Center
     ) {
-        currentWeather?.name?.let {
-            Text(
-                text = it
-            )
-        }
+        Text(
+            text = currentWeather.name
+        )
     }
+}
 
+@Composable
+fun WeatherIcon(){
+    Column{
+        val image = painterResource(R.drawable.sun)
+        Image(
+            painter = image,
+            contentDescription = "Sunny",
+            modifier = Modifier
+                .fillMaxWidth(.36f)
+                .padding(top = 14.dp)
+        )
+
+    }
+}
+
+@Composable
+fun StatsPage(currentWeather: CurrentWeather){
+    val context = LocalContext.current
     Row(
         Modifier
             .fillMaxWidth(),
@@ -102,29 +119,29 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
                     .padding(start = 12.dp, bottom = 18.dp)
 
             ){
-                val tempVal = currentWeather?.main?.temp?.toInt()
+                val tempVal = currentWeather.main.temp.toInt()
                 val tempText = tempVal.toString() + context.getString(R.string.temp)
                 Text(
                     text = tempText,
                     fontSize = 60.sp
                 )
-                val feelsLikeVal = currentWeather?.main?.feelsLike?.toInt()
+                val feelsLikeVal = currentWeather.main.feelsLike.toInt()
                 val feelsLikeText = context.getString(R.string.feels_like) + feelsLikeVal + context.getString(R.string.temp)
                 Text(
                     text = feelsLikeText,
                     modifier = Modifier.padding(start = 6.dp,top = 4.dp)
                 )
             }
-            val lowVal = currentWeather?.main?.tempMin?.toInt()
+            val lowVal = currentWeather.main.tempMin.toInt()
             val low = context.getString(R.string.low) + lowVal + context.getString(R.string.temp)
 
-            val highVal = currentWeather?.main?.tempMax?.toInt()
+            val highVal = currentWeather.main.tempMax.toInt()
             val high = context.getString(R.string.high) + highVal + context.getString(R.string.temp)
 
-            val humidityVal = currentWeather?.main?.humidity
+            val humidityVal = currentWeather.main.humidity
             val humidity = context.getString(R.string.humidity) + humidityVal + context.getString(R.string.percent)
 
-            val pressureVal = currentWeather?.main?.pressure
+            val pressureVal = currentWeather.main.pressure
             val pressure = context.getString(R.string.pressure) + pressureVal + context.getString(R.string.pressureUnit)
             Column{
                 Text(low)
@@ -133,18 +150,20 @@ fun WeatherScreen(viewModel: WeatherViewModel) {
                 Text(pressure)
             }
         }
-        Column{
-            val image = painterResource(R.drawable.sun)
-            Image(
-                painter = image,
-                contentDescription = "Sunny",
-                modifier = Modifier
-                    .fillMaxWidth(.36f)
-                    .padding(top = 14.dp)
-            )
 
-        }
+        WeatherIcon()
     }
+}
+
+
+@Composable
+fun WeatherScreen(viewModel: WeatherViewModel) {
+
+    val currentWeather by viewModel.weather.observeAsState()
+
+    AppHeader()
+    currentWeather?.let { CityName(it) }
+    currentWeather?.let { StatsPage(it) }
 }
 
 fun createRetrofitService(): WeatherService {
