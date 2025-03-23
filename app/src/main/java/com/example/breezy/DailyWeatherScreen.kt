@@ -61,7 +61,7 @@ fun DailyWeatherScreen(
 }
 
 @Composable
-fun ZipCode(onZipClicked: (Int) -> Unit) {
+fun ZipCode(zipClicked: (Int) -> Unit) {
 
     var zip by remember { mutableStateOf("") }
     Row(
@@ -78,7 +78,11 @@ fun ZipCode(onZipClicked: (Int) -> Unit) {
         )
         Button(
             onClick = {
-                onZipClicked(zip.toInt())
+                if(!zip.contains("[^0-9]".toRegex())){
+                    if(zip.length == 5){
+                        zipClicked(zip.toInt())
+                    }
+                }
             }
         ){
 
