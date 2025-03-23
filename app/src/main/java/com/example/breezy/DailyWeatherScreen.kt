@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -35,16 +36,18 @@ fun DailyWeatherScreen(
     val currentWeather by viewModel.weather.observeAsState()
     val zipCoords by viewModel.coords.observeAsState()
 
+    LaunchedEffect(zipCoords) {
+        zipCoords?.let { coords ->
+            viewModel.fetchWeather(
+                    latitude = coords.lat,
+                    longitude = coords.lon
+            )
+        }
+    }
+
     Column(){
         val zipCodeEntered: (Int) -> Unit = { item ->
             viewModel.fetchCoords(item)
-            println(zipCoords.toString())
-            val long = zipCoords?.lon
-            val lat = zipCoords?.lat
-            viewModel.fetchWeather(
-                latitude = lat!!,
-                longitude = long!!
-            )
         }
 
         AppHeader()
