@@ -11,11 +11,13 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
@@ -32,15 +34,25 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.BaselineShift
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+val openSans = FontFamily(Font(R.font.open_sans))
 
 @Composable
 fun DailyWeatherScreen(
@@ -51,6 +63,7 @@ fun DailyWeatherScreen(
     val zipCoords by viewModel.coords.observeAsState()
     val sharedPreferences = LocalContext.current.getSharedPreferences("BreezyPrefs",Context.MODE_PRIVATE)
     val errorMessage by viewModel.errorMessage
+
 
     LaunchedEffect(zipCoords) {
         zipCoords?.let { coords ->
@@ -74,7 +87,8 @@ fun DailyWeatherScreen(
     }
 
     Column(
-        modifier = Modifier.background(color = Color(0xFF4448d8) )
+        modifier = Modifier
+            .background(color = Color(0xFF4448d8))
             .fillMaxHeight()
     ){
         errorMessage?.let {
@@ -90,7 +104,7 @@ fun DailyWeatherScreen(
             }
         }
 
-        AppHeader()
+        currentWeather?.let { AppHeader(it) }
         ZipCode(zipCodeEntered,defaultClicked)
 
         if(currentWeather == null){
@@ -98,7 +112,6 @@ fun DailyWeatherScreen(
                 longitude = sharedPreferences.getFloat("lon",-1f).toDouble())
         }
 
-        currentWeather?.let { CityName(it) }
         Row(
             modifier = Modifier.fillMaxWidth(),
             //horizontalArrangement = Arrangement.Center
@@ -110,13 +123,16 @@ fun DailyWeatherScreen(
                         start = 40.dp
                     )
             ) {
+
                 currentWeather?.let { LargeTemp(it) }
                 currentWeather?.let { HighLow(it) }
 
             }
-            currentWeather?.let { Stats(it) }
-            WeatherIcon()
+            //currentWeather?.let { Stats(it) }
+            //WeatherIcon()
         }
+
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center
@@ -180,36 +196,48 @@ fun ZipCode(zipClicked: (Int) -> Unit,defaultClicked:() -> Unit) {
 }
 
 @Composable
-fun AppHeader(){
-    val context = LocalContext.current
-
+fun AppHeader(currentWeather: CurrentWeather){
     Row(
         Modifier
-            .padding(20.dp)
+            .padding(bottom = 20.dp, top = 20.dp, start = 40.dp),
+        verticalAlignment = Alignment.CenterVertically
     ){
         Text(
-            text = context.getString(R.string.app_name)
+            text = currentWeather.name,
+            fontSize = 25.sp,
+            color = Color.White,
+            style = TextStyle(
+                fontFamily = openSans,
+            )
         )
-    }
-}
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(),
+            contentAlignment = Alignment.CenterEnd
+        ){
+            Button(
+                onClick = {},
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = Color(255, 255, 255,0)
+                )
+            ) {
+                Text(
+                    text = "=",
+                    fontSize = 40.sp
+                )
+            }
+        }
 
-@Composable
-fun CityName(currentWeather: CurrentWeather){
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = currentWeather.name
-        )
     }
 }
 
 @Composable
 fun ForecastButton(onForecastClicked: () -> Unit){
-    Row{
+    Row(
+        modifier = Modifier
+            .fillMaxHeight(),
+        verticalAlignment = Alignment.Bottom
+    ){
         Button(
             onClick = onForecastClicked
         ) {
@@ -243,15 +271,34 @@ fun LargeTemp(currentWeather: CurrentWeather){
     val context = LocalContext.current
     val tempVal = currentWeather.main.temp.toInt().toString()
     val tempText = context.getString(R.string.temp)
-    Row(){
+
+    Row(
+    ){
         Text(
             text = tempVal,
-            fontSize = 160.sp
+
+            fontSize = 160.sp,
+            fontFamily = openSans,
+            modifier = Modifier.align(Alignment.Top),
+            style = TextStyle(
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.White,Color.White,Color.DarkGray)
+                )
+            )
         )
         Text(
             text = tempText,
-            fontSize = 40.sp,
-
+            fontSize = 60.sp,
+            modifier = Modifier
+                .align(Alignment.Top)
+                .offset(x = ((-10).dp)),
+            style = TextStyle(
+                fontFamily = openSans,
+                brush = Brush.verticalGradient(
+                    colors = listOf(Color.White,Color.White,Color.DarkGray)
+                ),
+                baselineShift = BaselineShift(-.5f)
+            )
         )
     }
 
@@ -259,11 +306,10 @@ fun LargeTemp(currentWeather: CurrentWeather){
 
 @Composable
 fun HighLow(currentWeather: CurrentWeather){
-
     val context = LocalContext.current
     val low = context.getString(R.string.low,currentWeather.main.tempMin.toInt())
     val loNHigh = context.getString(R.string.high,currentWeather.main.tempMax.toInt()) + " " + low
-
+    val openSans = FontFamily(Font(R.font.open_sans))
     Button(
         onClick = {},
         colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF695dec)),
@@ -271,7 +317,8 @@ fun HighLow(currentWeather: CurrentWeather){
     ) {
         Text(
             text = loNHigh,
-            fontSize = 18.sp
+            fontSize = 18.sp,
+            style = TextStyle(fontFamily = openSans)
         )
     }
 
