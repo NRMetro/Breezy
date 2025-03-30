@@ -18,7 +18,8 @@ interface WeatherService {
         @Query("lat") latitude: Double,
         @Query("lon") longitude: Double,
         @Query("appid") apiKey: String,
-        @Query("units") unitType: String
+        @Query("units") unitType: String,
+        @Query("cnt") count: Int
     ): Call<Forecast>
 
 }

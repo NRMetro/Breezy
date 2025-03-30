@@ -71,7 +71,7 @@ class WeatherViewModel (
     }
 
     fun fetchForecast(latitude: Double, longitude:Double){
-        val call = weatherService.getForecast(latitude = latitude, longitude = longitude,apiKey = apiKey, unitType = "imperial")
+        val call = weatherService.getForecast(latitude = latitude, longitude = longitude,apiKey = apiKey, unitType = "imperial", count = 14)
         call.enqueue(object: Callback<Forecast>{
             override fun onResponse(p0: Call<Forecast>, p1: Response<Forecast>) {
                 _forecast.value = p1.body()
