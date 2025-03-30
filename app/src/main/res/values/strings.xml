@@ -1,13 +1,10 @@
 <resources>
     <string name="app_name">Breezy</string>
     <string name="temp">°F</string>
-    <string name="feels_like">Feels like&#160;</string>
-    <string name="low">Low&#160;</string>
-    <string name="high">High&#160;</string>
-    <string name="humidity">Humidity&#160;</string>
-    <string name="percent">%</string>
-    <string name="pressure">Pressure&#160;</string>
-    <string name="pressureUnit">&#160;hPa</string>
-    <string name="latitude">30.26</string>
-    <string name="longitude">-97.74</string>
+    <string name="feels_like">Feels like %1$d</string>
+    <string name="low">↓ %1$d°</string>
+    <string name="high">↑ %1$d°</string>
+    <string name="humidity">Humidity %1$d</string>
+    <string name="pressure">Pressure %1$d</string>
+    <string name="pressureUnit">%1$d hPa</string>
 </resources>
