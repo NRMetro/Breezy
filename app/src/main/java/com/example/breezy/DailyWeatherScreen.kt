@@ -1,9 +1,10 @@
 package com.example.breezy
 
 import android.content.Context
-import android.graphics.Color.rgb
+import android.widget.GridLayout
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,15 +12,21 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
@@ -27,8 +34,6 @@ import androidx.compose.material3.TextField
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -36,22 +41,18 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.graphics.computeHorizontalBounds
+import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -120,18 +121,26 @@ fun DailyWeatherScreen(
         ) {
             Column(
                 modifier = Modifier
-                    .fillMaxWidth(.8f)
+                    .fillMaxWidth()
                     .padding(
-                        start = 40.dp
+                        start = 30.dp,
+                        end = 30.dp
                     )
             ) {
 
-                currentWeather?.let { LargeTemp(it) }
+                Row(){
+                    currentWeather?.let { LargeTemp(it) }
+                    Column(
+                        modifier = Modifier.padding(top = 50.dp)
+                    ) { WeatherIcon() }
+
+                }
+
                 currentWeather?.let { HighLow(it) }
+                currentWeather?.let { Stats(it) }
 
             }
-            //currentWeather?.let { Stats(it) }
-            //WeatherIcon()
+
         }
 
 
@@ -213,6 +222,12 @@ fun AppHeader(currentWeather: CurrentWeather,zipClicked: (Int) -> Unit,defaultCl
             .padding(bottom = 20.dp, top = 20.dp, start = 40.dp),
         verticalAlignment = Alignment.CenterVertically
     ){
+        Icon(
+            imageVector =  Icons.Default.Place,
+            contentDescription = "Location Icon",
+            tint = Color.White
+        )
+
         Text(
             text = currentWeather.name,
             fontSize = 25.sp,
@@ -234,9 +249,10 @@ fun AppHeader(currentWeather: CurrentWeather,zipClicked: (Int) -> Unit,defaultCl
                     containerColor = Color(255, 255, 255,0)
                 )
             ) {
-                Text(
-                    text = "=",
-                    fontSize = 40.sp
+                Icon(
+                    imageVector =  Icons.Default.Menu,
+                    contentDescription = "Location Icon",
+                    tint = Color.White
                 )
             }
         }
@@ -264,7 +280,8 @@ fun ForecastButton(onForecastClicked: () -> Unit){
         verticalAlignment = Alignment.Bottom
     ){
         Button(
-            onClick = onForecastClicked
+            onClick = onForecastClicked,
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF695dec)),
         ) {
             Text("Check Forecast")
         }
@@ -273,22 +290,11 @@ fun ForecastButton(onForecastClicked: () -> Unit){
 
 @Composable
 fun WeatherIcon(){
-    Column(
-        modifier = Modifier
-            .fillMaxWidth(.4f)
-            .padding(top = 6.dp)
-    ){
-        Row {
-            val image = painterResource(R.drawable.sun)
-            Image(
-                painter = image,
-                contentDescription = "Sunny"
-            )
-        }
-
-
-    }
-
+    val image = painterResource(R.drawable.sun)
+    Image(
+        painter = image,
+        contentDescription = "Sunny"
+    )
 }
 
 @Composable
@@ -334,15 +340,20 @@ fun HighLow(currentWeather: CurrentWeather){
     val low = context.getString(R.string.low,currentWeather.main.tempMin.toInt())
     val loNHigh = context.getString(R.string.high,currentWeather.main.tempMax.toInt()) + " " + low
     val openSans = FontFamily(Font(R.font.open_sans))
-    Button(
-        onClick = {},
-        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF695dec)),
-        modifier = Modifier.size(140.dp,40.dp)
+    Box(
+        modifier = Modifier
+            .size(140.dp,40.dp)
+            .clip(CircleShape)
+            .border(width = 1.dp,color = Color.LightGray,shape = CircleShape)
+            .background(color = Color(0xFF695dec)),
+        contentAlignment = Alignment.Center
     ) {
         Text(
             text = loNHigh,
             fontSize = 18.sp,
-            style = TextStyle(fontFamily = openSans)
+            style = TextStyle(fontFamily = openSans),
+            color = Color.White,
+            textAlign = TextAlign.Center
         )
     }
 
@@ -353,29 +364,76 @@ fun Stats(currentWeather: CurrentWeather){
     val context = LocalContext.current
     Column(
         modifier = Modifier
-            .fillMaxWidth(.5f)
-    ){
-        Column (
+            .fillMaxWidth()
+            .padding(top = 50.dp)
+    ) {
+        Row(
             modifier = Modifier
-                .padding(start = 12.dp, bottom = 18.dp)
+                .fillMaxWidth()
+                .size(150.dp)
+                .clip(RoundedCornerShape(30.dp))
+                .background(
+                    color = Color(0xFF695dec)
+                )
+                .border(width = 1.dp,color = Color.LightGray,shape = RoundedCornerShape(30.dp))
 
-        ){
+        ) {
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = context.getString(R.string.feels_like, currentWeather.main.feelsLike.toInt()),
+                    textAlign = TextAlign.Center,
+                    color = Color.White
+                )
+            }
 
-            val feelsLikeText = context.getString(R.string.feels_like, currentWeather.main.feelsLike.toInt())
-            Text(
-                text = feelsLikeText,
-                modifier = Modifier.padding(start = 6.dp,top = 4.dp)
+            Box(
+                modifier = Modifier
+                    .height(75.dp)
+                    .width(1.dp)
+                    .background(Color.White)
+                    .align(Alignment.CenterVertically)
             )
-        }
 
-        val humidity = context.getString(R.string.humidity, currentWeather.main.humidity)
-        val pressure = context.getString(R.string.pressure,currentWeather.main.pressure)
-        Column{
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = context.getString(R.string.humidity, currentWeather.main.humidity) + "%",
+                    textAlign = TextAlign.Center,
+                    color = Color.White
+                )
+            }
 
-            Text(humidity)
-            Text(pressure)
+            Box(
+                modifier = Modifier
+                    .height(75.dp)
+                    .width(1.dp)
+                    .background(Color.White)
+                    .align(Alignment.CenterVertically)
+            )
+
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = context.getString(R.string.pressure,currentWeather.main.pressure),
+                    textAlign = TextAlign.Center,
+                    color = Color.White
+                )
+            }
         }
     }
-
-
 }
+
+

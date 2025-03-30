@@ -10,7 +10,7 @@ data class Forecast(
     val message: Double,
     val cnt: Int,
     val list: ArrayList<WeatherList>
-){}
+)
 
 @Serializable
 data class City(
@@ -24,9 +24,9 @@ data class City(
 
 @Serializable
 data class WeatherList(
-    val dt: Int,
-    val sunrise: Int,
-    val sunset: Int,
+    val dt: Long,
+    val sunrise: Long,
+    val sunset: Long,
     val temp: Temp,
     @SerialName("feels_like")
     val feelsLike: FeelsLike,
