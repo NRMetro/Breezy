@@ -19,6 +19,8 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonColors
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -39,6 +41,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.computeHorizontalBounds
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -104,8 +107,7 @@ fun DailyWeatherScreen(
             }
         }
 
-        currentWeather?.let { AppHeader(it) }
-        ZipCode(zipCodeEntered,defaultClicked)
+        currentWeather?.let { AppHeader(it,zipCodeEntered,defaultClicked) }
 
         if(currentWeather == null){
             viewModel.fetchWeather(latitude = sharedPreferences.getFloat("lat",-1f).toDouble(),
@@ -169,7 +171,7 @@ fun ZipCode(zipClicked: (Int) -> Unit,defaultClicked:() -> Unit) {
             onValueChange = {
                 zip = it
             },
-            label = {Text("Enter Zipcode")},
+            label = {Text("Change Zipcode")},
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
         Column {
@@ -185,18 +187,27 @@ fun ZipCode(zipClicked: (Int) -> Unit,defaultClicked:() -> Unit) {
             ){
                 Text("Enter")
             }
-            Button(
-                onClick = defaultClicked
+        }
 
-            ) {
-                Text("Change Default")
-            }
+    }
+    Column (
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
+        Button(
+            onClick = defaultClicked
+        ) {
+            Text("Change Default City")
         }
     }
+
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppHeader(currentWeather: CurrentWeather){
+fun AppHeader(currentWeather: CurrentWeather,zipClicked: (Int) -> Unit,defaultClicked:() -> Unit){
+    var openMenu by remember { mutableStateOf<Boolean?>(null) }
+
     Row(
         Modifier
             .padding(bottom = 20.dp, top = 20.dp, start = 40.dp),
@@ -216,7 +227,9 @@ fun AppHeader(currentWeather: CurrentWeather){
             contentAlignment = Alignment.CenterEnd
         ){
             Button(
-                onClick = {},
+                onClick = {
+                    openMenu = true
+                },
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color(255, 255, 255,0)
                 )
@@ -228,6 +241,18 @@ fun AppHeader(currentWeather: CurrentWeather){
             }
         }
 
+    }
+
+    openMenu?.let {
+        ModalBottomSheet(
+            onDismissRequest = { openMenu = null}
+        ) {
+            Column(
+                modifier = Modifier.padding(horizontal = 16.dp)
+            ) {
+                ZipCode(zipClicked = zipClicked,defaultClicked = defaultClicked)
+            }
+        }
     }
 }
 
@@ -276,7 +301,6 @@ fun LargeTemp(currentWeather: CurrentWeather){
     ){
         Text(
             text = tempVal,
-
             fontSize = 160.sp,
             fontFamily = openSans,
             modifier = Modifier.align(Alignment.Top),
