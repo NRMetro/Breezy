@@ -9,7 +9,7 @@ data class CurrentWeather(
     val weather: List<Weather>,
     val base: String,
     val main: Main,
-    val visibility: Int,
+    val visibility: Int? = null,
     val wind: Wind,
     val rain: Rain? = null,
     val snow: Snow? = null,

@@ -132,8 +132,13 @@ fun DailyWeatherScreen(
                     currentWeather?.let { LargeTemp(it) }
                     Column(
                         modifier = Modifier.padding(top = 50.dp)
-                    ) { WeatherIcon() }
+                    ) {
 
+                        Image(
+                            painter = painterResource(viewModel.weatherIcon()),
+                            contentDescription = "weatherType"
+                        )
+                    }
                 }
 
                 currentWeather?.let { HighLow(it) }
@@ -289,11 +294,19 @@ fun ForecastButton(onForecastClicked: () -> Unit){
 }
 
 @Composable
-fun WeatherIcon(){
-    val image = painterResource(R.drawable.sun)
+fun WeatherIcon(currentWeather: CurrentWeather){
+    val weatherType = currentWeather.weather[0].main
+    var image = painterResource(R.drawable.sun)
+    if (weatherType == "Snow"){
+        image = painterResource(R.drawable.snow)
+    }
+    else if(weatherType == "Rain"){
+        image = painterResource(R.drawable.rain)
+    }
+
     Image(
         painter = image,
-        contentDescription = "Sunny"
+        contentDescription = weatherType
     )
 }
 

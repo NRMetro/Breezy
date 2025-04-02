@@ -2,9 +2,12 @@ package com.example.breezy
 
 
 import android.util.Log
+import androidx.compose.foundation.Image
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.res.painterResource
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -82,5 +85,29 @@ class WeatherViewModel (
                 Log.e("Weather", "Failed Call", p1)
             }
         })
+    }
+
+    fun weatherIcon(): Int {
+        var weatherType = ""
+        this.weather.value?.let { currentWeather ->
+            weatherType = currentWeather.weather[0].main
+
+        }
+        return weatherIcon(weatherType)
+    }
+
+    fun weatherIcon(weatherType:String): Int {
+        var image = R.drawable.sun
+        if (weatherType == "Snow"){
+            image = R.drawable.snow
+        }
+        else if(weatherType == "Rain"){
+            image = R.drawable.rain
+        }
+        else if(weatherType == "Clouds"){
+            image = R.drawable.partly_cloudy
+        }
+
+        return image
     }
 }

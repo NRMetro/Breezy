@@ -3,6 +3,7 @@ package com.example.breezy
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -25,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import java.time.Instant
@@ -74,26 +76,26 @@ fun ExtendedForecastScreen(
         )
 
         forecast?.let{ forecast ->
-            ForecastScreen(forecast.list)
+            ForecastScreen(forecast.list,viewModel)
         }
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ForecastScreen(forecastItems: List<WeatherList>) {
+fun ForecastScreen(forecastItems: List<WeatherList>,viewModel: WeatherViewModel) {
     LazyColumn(
         contentPadding = PaddingValues(10.dp)
     ) {
         items(forecastItems){ forecastItem ->
-            ForecastItemView(forecastItem)
+            ForecastItemView(forecastItem,viewModel)
         }
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ForecastItemView(weather: WeatherList) {
+fun ForecastItemView(weather: WeatherList,viewModel: WeatherViewModel) {
     val context = LocalContext.current
     Row(
         Modifier
@@ -107,7 +109,11 @@ fun ForecastItemView(weather: WeatherList) {
             modifier = Modifier
                 .size(50.dp)
         ) {
-            WeatherIcon()
+
+            Image(
+                painter = painterResource(viewModel.weatherIcon(weather.weather[0].main)),
+                contentDescription = "weatherType"
+            )
         }
         Column(
             modifier = Modifier
