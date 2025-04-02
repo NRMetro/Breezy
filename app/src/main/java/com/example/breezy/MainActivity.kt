@@ -4,27 +4,19 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
 import com.example.breezy.ui.theme.BreezyTheme
-import androidx.compose.ui.unit.sp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -32,23 +24,29 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.kotlinx.serialization.asConverterFactory
 
+@Serializable
+object DailyWeather
+
+@Serializable
+object ForecastDestination
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val weatherService = createRetrofitService()
+        val zipService = createRetrofitServiceZip()
+
         val apiKey = resources.getString(R.string.weather_api_key)
-        val latitude = resources.getString(R.string.latitude).toDouble()
-        val longitude = resources.getString(R.string.longitude).toDouble()
-        val viewModel = WeatherViewModel( weatherService,apiKey,latitude,longitude)
-        viewModel.fetchWeather()
+        val viewModel = WeatherViewModel( weatherService,apiKey,zipService)
+
         setContent {
             BreezyTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    Column (
+                    Box (
                         modifier = Modifier.padding(innerPadding)
                     ){
-                        WeatherScreen(viewModel = viewModel)
+                        WeatherNavigation(viewModel)
                     }
 
                 }
@@ -57,95 +55,32 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+
 @Composable
-fun WeatherScreen(viewModel: WeatherViewModel) {
+fun WeatherNavigation(
+    weatherViewModel: WeatherViewModel
+){
+    val navController = rememberNavController()
 
-    val currentWeather by viewModel.weather.observeAsState()
-
-    val context = LocalContext.current
-
-    Row(
-        Modifier
-            .background(Color.LightGray)
-            .fillMaxWidth()
-            .padding(6.dp)
-    ){
-        Text(
-            text = context.getString(R.string.app_name)
-        )
-    }
-
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(8.dp),
-        horizontalArrangement = Arrangement.Center
-    ) {
-        currentWeather?.name?.let {
-            Text(
-                text = it
+    NavHost(navController = navController, startDestination = DailyWeather){
+        composable<DailyWeather>{
+            DailyWeatherScreen(
+                viewModel = weatherViewModel,
+                onForecastClicked = {navController.navigate(ForecastDestination)}
             )
         }
-    }
 
-    Row(
-        Modifier
-            .fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center
-    ){
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(.5f)
-        ){
-            Column (
-                modifier = Modifier
-                    .padding(start = 12.dp, bottom = 18.dp)
-
-            ){
-                val tempVal = currentWeather?.main?.temp?.toInt()
-                val tempText = tempVal.toString() + context.getString(R.string.temp)
-                Text(
-                    text = tempText,
-                    fontSize = 60.sp
-                )
-                val feelsLikeVal = currentWeather?.main?.feelsLike?.toInt()
-                val feelsLikeText = context.getString(R.string.feels_like) + feelsLikeVal + context.getString(R.string.temp)
-                Text(
-                    text = feelsLikeText,
-                    modifier = Modifier.padding(start = 6.dp,top = 4.dp)
-                )
-            }
-            val lowVal = currentWeather?.main?.tempMin?.toInt()
-            val low = context.getString(R.string.low) + lowVal + context.getString(R.string.temp)
-
-            val highVal = currentWeather?.main?.tempMax?.toInt()
-            val high = context.getString(R.string.high) + highVal + context.getString(R.string.temp)
-
-            val humidityVal = currentWeather?.main?.humidity
-            val humidity = context.getString(R.string.humidity) + humidityVal + context.getString(R.string.percent)
-
-            val pressureVal = currentWeather?.main?.pressure
-            val pressure = context.getString(R.string.pressure) + pressureVal + context.getString(R.string.pressureUnit)
-            Column{
-                Text(low)
-                Text(high)
-                Text(humidity)
-                Text(pressure)
-            }
-        }
-        Column{
-            val image = painterResource(R.drawable.sun)
-            Image(
-                painter = image,
-                contentDescription = "Sunny",
-                modifier = Modifier
-                    .fillMaxWidth(.36f)
-                    .padding(top = 14.dp)
+        composable<ForecastDestination> {
+            ExtendedForecastScreen(
+                viewModel = weatherViewModel,
+                onBackClicked = { navController.popBackStack() }
             )
-
         }
+
     }
+
 }
+
 
 fun createRetrofitService(): WeatherService {
     val logging = HttpLoggingInterceptor()
@@ -162,6 +97,23 @@ fun createRetrofitService(): WeatherService {
         ))
         .build()
         .create(WeatherService::class.java)
+}
+
+fun createRetrofitServiceZip(): ZipService {
+    val logging = HttpLoggingInterceptor()
+    logging.setLevel(HttpLoggingInterceptor.Level.BODY)
+    val client: OkHttpClient = OkHttpClient.Builder()
+        .addInterceptor(logging)
+        .build()
+    return Retrofit.Builder()
+        .baseUrl("https://api.openweathermap.org/geo/1.0/")
+        .client(client)
+        .addConverterFactory(
+            Json.asConverterFactory(
+                "application/json".toMediaType()
+            ))
+        .build()
+        .create(ZipService::class.java)
 }
 
 //@Preview(showBackground = true)

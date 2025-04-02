@@ -9,9 +9,10 @@ data class CurrentWeather(
     val weather: List<Weather>,
     val base: String,
     val main: Main,
-    val visibility: Int,
+    val visibility: Int? = null,
     val wind: Wind,
     val rain: Rain? = null,
+    val snow: Snow? = null,
     val clouds: Clouds,
     val dt: Int,
     val sys: Sys,
@@ -64,6 +65,12 @@ data class Wind(
 
 @Serializable
 data class Rain(
+    @SerialName("1h")
+    val oneHour: Double
+)
+
+@Serializable
+data class Snow(
     @SerialName("1h")
     val oneHour: Double
 )
