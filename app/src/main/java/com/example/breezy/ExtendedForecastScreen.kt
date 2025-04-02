@@ -1,5 +1,7 @@
 package com.example.breezy
 
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -17,7 +19,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,6 +31,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
@@ -34,6 +41,7 @@ import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
 
+@SuppressLint("ContextCastToActivity")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ExtendedForecastScreen(
@@ -43,6 +51,10 @@ fun ExtendedForecastScreen(
     val forecast by viewModel.forecast.observeAsState()
     val zipCoords by viewModel.coords.observeAsState()
     val sharedPreferences = LocalContext.current.getSharedPreferences("BreezyPrefs", Context.MODE_PRIVATE)
+
+    val window = (LocalContext.current as Activity).window
+    window.statusBarColor = Color.White.toArgb()
+    window.navigationBarColor = Color.White.toArgb()
 
 
     if(zipCoords != null){
@@ -68,7 +80,11 @@ fun ExtendedForecastScreen(
         Button(
             onClick = onBackClicked,
         ) {
-            Text("Return")
+            Icon(
+                imageVector =  Icons.Default.ArrowBack,
+                contentDescription = "Location Icon",
+                tint = Color.White
+            )
         }
         Text(
             text = "Next 14 Days",

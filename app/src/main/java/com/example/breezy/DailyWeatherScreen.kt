@@ -1,5 +1,6 @@
 package com.example.breezy
-
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.widget.GridLayout
 import androidx.compose.foundation.Image
@@ -45,6 +46,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -56,13 +58,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
+
 val openSans = FontFamily(Font(R.font.open_sans))
 
+@SuppressLint("ContextCastToActivity")
 @Composable
 fun DailyWeatherScreen(
     viewModel: WeatherViewModel,
     onForecastClicked: () -> Unit
 ) {
+
     val currentWeather by viewModel.weather.observeAsState()
     val zipCoords by viewModel.coords.observeAsState()
     val sharedPreferences = LocalContext.current.getSharedPreferences("BreezyPrefs",Context.MODE_PRIVATE)
@@ -89,6 +94,11 @@ fun DailyWeatherScreen(
             editor.apply()
         }
     }
+
+    val window = (LocalContext.current as Activity).window
+    window.statusBarColor = Color(0xFF4448d8).toArgb()
+    window.navigationBarColor = Color(0xFF4448d8).toArgb()
+
 
     Column(
         modifier = Modifier
