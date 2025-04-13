@@ -1,8 +1,11 @@
 package com.example.breezy
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.widget.GridLayout
+import android.widget.ImageView
+import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,6 +13,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -35,6 +39,7 @@ import androidx.compose.material3.TextField
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +62,13 @@ import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import android.Manifest
+import android.content.pm.PackageManager
+import android.location.Location
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import com.google.android.gms.location.LocationServices
 
 
 val openSans = FontFamily(Font(R.font.open_sans))
@@ -64,19 +76,19 @@ val openSans = FontFamily(Font(R.font.open_sans))
 @SuppressLint("ContextCastToActivity")
 @Composable
 fun DailyWeatherScreen(
-    viewModel: WeatherViewModel,
+    weatherViewModel: WeatherViewModel,
     onForecastClicked: () -> Unit
 ) {
 
-    val currentWeather by viewModel.weather.observeAsState()
-    val zipCoords by viewModel.coords.observeAsState()
+    val currentWeather by weatherViewModel.weather.observeAsState()
+    val zipCoords by weatherViewModel.coords.observeAsState()
     val sharedPreferences = LocalContext.current.getSharedPreferences("BreezyPrefs",Context.MODE_PRIVATE)
-    val errorMessage by viewModel.errorMessage
+    val errorMessage by weatherViewModel.errorMessage
 
 
     LaunchedEffect(zipCoords) {
         zipCoords?.let { coords ->
-            viewModel.fetchWeather(
+            weatherViewModel.fetchWeather(
                     latitude = coords.lat,
                     longitude = coords.lon
             )
@@ -84,7 +96,7 @@ fun DailyWeatherScreen(
     }
 
     val zipCodeEntered: (Int) -> Unit = { item ->
-        viewModel.fetchCoords(item)
+        weatherViewModel.fetchCoords(item)
     }
     val defaultClicked: () -> Unit = {
         val editor = sharedPreferences.edit()
@@ -110,7 +122,7 @@ fun DailyWeatherScreen(
                 dismissAction = {
                     Text(
                         "OK",
-                        modifier = Modifier.clickable { viewModel.errorShown() }
+                        modifier = Modifier.clickable { weatherViewModel.errorShown() }
                     )
                 }
             ) {
@@ -121,7 +133,7 @@ fun DailyWeatherScreen(
         currentWeather?.let { AppHeader(it,zipCodeEntered,defaultClicked) }
 
         if(currentWeather == null){
-            viewModel.fetchWeather(latitude = sharedPreferences.getFloat("lat",-1f).toDouble(),
+            weatherViewModel.fetchWeather(latitude = sharedPreferences.getFloat("lat",-1f).toDouble(),
                 longitude = sharedPreferences.getFloat("lon",-1f).toDouble())
         }
 
@@ -145,7 +157,7 @@ fun DailyWeatherScreen(
                     ) {
 
                         Image(
-                            painter = painterResource(viewModel.weatherIcon()),
+                            painter = painterResource(weatherViewModel.weatherIcon()),
                             contentDescription = "weatherType"
                         )
                     }
@@ -227,18 +239,15 @@ fun ZipCode(zipClicked: (Int) -> Unit,defaultClicked:() -> Unit) {
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppHeader(currentWeather: CurrentWeather,zipClicked: (Int) -> Unit,defaultClicked:() -> Unit){
-    var openMenu by remember { mutableStateOf<Boolean?>(null) }
-
     Row(
         Modifier
             .padding(bottom = 20.dp, top = 20.dp, start = 40.dp),
         verticalAlignment = Alignment.CenterVertically
-    ){
+    ) {
         Icon(
-            imageVector =  Icons.Default.Place,
+            imageVector = Icons.Default.Place,
             contentDescription = "Location Icon",
             tint = Color.White
         )
@@ -251,28 +260,38 @@ fun AppHeader(currentWeather: CurrentWeather,zipClicked: (Int) -> Unit,defaultCl
                 fontFamily = openSans,
             )
         )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(),
-            contentAlignment = Alignment.CenterEnd
-        ){
-            Button(
-                onClick = {
-                    openMenu = true
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(255, 255, 255,0)
-                )
-            ) {
-                Icon(
-                    imageVector =  Icons.Default.Menu,
-                    contentDescription = "Location Icon",
-                    tint = Color.White
-                )
-            }
-        }
 
+        MyLocationButton()
+        MenuButton(zipClicked,defaultClicked)
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MenuButton(zipClicked: (Int) -> Unit,defaultClicked:() -> Unit){
+    var openMenu by remember { mutableStateOf<Boolean?>(null) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(),
+        contentAlignment = Alignment.CenterEnd
+    ){
+        Button(
+            onClick = {
+                openMenu = true
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(255, 255, 255,0)
+            )
+        ) {
+            Icon(
+                imageVector =  Icons.Default.Menu,
+                contentDescription = "Location Icon",
+                tint = Color.White
+            )
+        }
+    }
+
 
     openMenu?.let {
         ModalBottomSheet(
@@ -303,22 +322,49 @@ fun ForecastButton(onForecastClicked: () -> Unit){
     }
 }
 
+
+
+
 @Composable
-fun WeatherIcon(currentWeather: CurrentWeather){
-    val weatherType = currentWeather.weather[0].main
-    var image = painterResource(R.drawable.sun)
-    if (weatherType == "Snow"){
-        image = painterResource(R.drawable.snow)
-    }
-    else if(weatherType == "Rain"){
-        image = painterResource(R.drawable.rain)
+fun MyLocationButton(){
+    val viewModel = LocationViewModel()
+    val context = LocalContext.current
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+    val locationState = remember { mutableStateOf<Location?>(null) }
+
+    val launcher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if(granted){
+
+        }
+        else{
+
+        }
     }
 
-    Image(
-        painter = image,
-        contentDescription = weatherType
-    )
+    Button(
+        onClick = {
+            viewModel.checkOrRequestLocationPermission(context,launcher){
+                var hasLocationPermission = true
+            }
+        },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(255, 255, 255,0)
+        ),
+        shape = CircleShape,
+        modifier = Modifier
+            .size(60.dp),
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        Image(
+            painter = painterResource(R.drawable.my_location_24px) ,
+            contentDescription = "My Location"
+        )
+    }
 }
+
+
 
 @Composable
 fun LargeTemp(currentWeather: CurrentWeather){

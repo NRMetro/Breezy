@@ -69,8 +69,8 @@ fun WeatherNavigation(
     NavHost(navController = navController, startDestination = DailyWeather){
         composable<DailyWeather>{
             DailyWeatherScreen(
-                viewModel = weatherViewModel,
-                onForecastClicked = {navController.navigate(ForecastDestination)}
+                weatherViewModel = weatherViewModel,
+                onForecastClicked = { navController.navigate(ForecastDestination) }
             )
         }
 

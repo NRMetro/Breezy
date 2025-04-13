@@ -66,4 +66,5 @@ dependencies {
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
     implementation(libs.androidx.navigation)
     implementation("androidx.compose.ui:ui-text-google-fonts:1.7.8")
+    implementation("com.google.android.gms:play-services-location:19.0.1")
 }
