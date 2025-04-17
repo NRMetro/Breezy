@@ -1,19 +1,24 @@
 package com.example.breezy
 
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.ServiceConnection
 import android.os.Build
 import android.os.Bundle
+import android.os.IBinder
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.lifecycle.ViewModelProvider
 import com.example.breezy.ui.theme.BreezyTheme
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -33,6 +38,27 @@ object DailyWeather
 object ForecastDestination
 
 class MainActivity : ComponentActivity() {
+    private var bound = false
+    private var service: LocationService? = null
+    private lateinit var locationViewModel: LocationViewModel
+
+    private val connection = object : ServiceConnection {
+        override fun onServiceConnected(name: ComponentName?, binder: IBinder?) {
+            val localBinder = binder as LocationService.LocalBinder
+            service = localBinder.getService()
+            bound = true
+
+            service?.setOnLocationUpdateListener { location ->
+                locationViewModel.updateLocation(location)
+            }
+        }
+
+        override fun onServiceDisconnected(name: ComponentName?) {
+            bound = false
+            service = null
+        }
+    }
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -41,7 +67,9 @@ class MainActivity : ComponentActivity() {
         val zipService = createRetrofitServiceZip()
 
         val apiKey = resources.getString(R.string.weather_api_key)
-        val viewModel = WeatherViewModel( weatherService,apiKey,zipService)
+        val weatherViewModel = WeatherViewModel( weatherService,apiKey,zipService)
+
+        locationViewModel = ViewModelProvider(this)[LocationViewModel::class.java]
 
         setContent {
             BreezyTheme {
@@ -49,41 +77,58 @@ class MainActivity : ComponentActivity() {
                     Box (
                         modifier = Modifier.padding(innerPadding)
                     ){
-                        WeatherNavigation(viewModel)
+                        WeatherNavigation(weatherViewModel)
                     }
 
                 }
             }
         }
     }
-}
+    override fun onStart() {
 
+        super.onStart()
+        val intent = Intent(this, LocationService::class.java)
+        bindService(intent, connection, Context.BIND_AUTO_CREATE)
+    }
 
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun WeatherNavigation(
-    weatherViewModel: WeatherViewModel
-){
-    val navController = rememberNavController()
-
-    NavHost(navController = navController, startDestination = DailyWeather){
-        composable<DailyWeather>{
-            DailyWeatherScreen(
-                weatherViewModel = weatherViewModel,
-                onForecastClicked = { navController.navigate(ForecastDestination) }
-            )
+    override fun onStop() {
+        super.onStop()
+        if (bound) {
+            unbindService(connection)
+            bound = false
         }
+    }
 
-        composable<ForecastDestination> {
-            ExtendedForecastScreen(
-                viewModel = weatherViewModel,
-                onBackClicked = { navController.popBackStack() }
-            )
+    @RequiresApi(Build.VERSION_CODES.O)
+    @Composable
+    fun WeatherNavigation(
+        weatherViewModel: WeatherViewModel
+    ){
+        val navController = rememberNavController()
+        val context = LocalContext.current
+        NavHost(navController = navController, startDestination = DailyWeather){
+            composable<DailyWeather>{
+                DailyWeatherScreen(
+                    weatherViewModel = weatherViewModel,
+                    locationViewModel = locationViewModel,
+                    onForecastClicked = { navController.navigate(ForecastDestination) },
+                    onRequestLocation = { locationViewModel.fetchLocation(service) }
+                )
+            }
+
+            composable<ForecastDestination> {
+                ExtendedForecastScreen(
+                    viewModel = weatherViewModel,
+                    onBackClicked = { navController.popBackStack() }
+                )
+            }
+
         }
 
     }
-
 }
+
+
 
 
 fun createRetrofitService(): WeatherService {

@@ -110,4 +110,5 @@ class WeatherViewModel (
 
         return image
     }
+
 }
