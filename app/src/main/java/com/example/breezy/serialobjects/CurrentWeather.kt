@@ -1,4 +1,4 @@
-package com.example.breezy
+package com.example.breezy.serialobjects
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

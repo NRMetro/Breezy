@@ -1,7 +1,9 @@
-package com.example.breezy
-
+package com.example.breezy.screens
+import android.Manifest
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
-import android.widget.GridLayout
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -9,6 +11,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -44,7 +47,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -55,31 +58,68 @@ import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.content.pm.PackageManager
+import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
+import com.example.breezy.serialobjects.CurrentWeather
+import com.example.breezy.services.LocationService
+import com.example.breezy.viewmodels.LocationViewModel
+import com.example.breezy.R
+import com.example.breezy.viewmodels.WeatherViewModel
 
 val openSans = FontFamily(Font(R.font.open_sans))
 
+@SuppressLint("ContextCastToActivity")
 @Composable
 fun DailyWeatherScreen(
-    viewModel: WeatherViewModel,
+    weatherViewModel: WeatherViewModel,
+    locationViewModel: LocationViewModel,
     onForecastClicked: () -> Unit
 ) {
-    val currentWeather by viewModel.weather.observeAsState()
-    val zipCoords by viewModel.coords.observeAsState()
-    val sharedPreferences = LocalContext.current.getSharedPreferences("BreezyPrefs",Context.MODE_PRIVATE)
-    val errorMessage by viewModel.errorMessage
 
+    val currentWeather by weatherViewModel.weather.observeAsState()
+    val zipCoords by weatherViewModel.coords.observeAsState()
+    val sharedPreferences = LocalContext.current.getSharedPreferences("BreezyPrefs",Context.MODE_PRIVATE)
+    val errorMessage by weatherViewModel.errorMessage
+    val locService by locationViewModel.location.observeAsState()
+    val context = LocalContext.current
+    var needNotification by remember { mutableStateOf(false) }
 
     LaunchedEffect(zipCoords) {
         zipCoords?.let { coords ->
-            viewModel.fetchWeather(
+            weatherViewModel.fetchWeather(
                     latitude = coords.lat,
                     longitude = coords.lon
             )
+            if(checkNotificationPerm(context)){
+                needNotification = true
+            }
+
         }
     }
 
+    LaunchedEffect(locService) {
+        locService?.let{
+            val lat = locService!!.latitude
+            val long = locService!!.longitude
+            Log.d("ABC","$lat and $long")
+            weatherViewModel.fetchWeather(
+                latitude = lat,
+                longitude = long
+            )
+
+            if(checkNotificationPerm(context)){
+                needNotification = true
+            }
+        }
+    }
+
+
+
     val zipCodeEntered: (Int) -> Unit = { item ->
-        viewModel.fetchCoords(item)
+        weatherViewModel.fetchCoords(item)
     }
     val defaultClicked: () -> Unit = {
         val editor = sharedPreferences.edit()
@@ -89,6 +129,11 @@ fun DailyWeatherScreen(
             editor.apply()
         }
     }
+
+    val window = (LocalContext.current as Activity).window
+    window.statusBarColor = Color(0xFF4448d8).toArgb()
+    window.navigationBarColor = Color(0xFF4448d8).toArgb()
+
 
     Column(
         modifier = Modifier
@@ -100,7 +145,7 @@ fun DailyWeatherScreen(
                 dismissAction = {
                     Text(
                         "OK",
-                        modifier = Modifier.clickable { viewModel.errorShown() }
+                        modifier = Modifier.clickable { weatherViewModel.errorShown() }
                     )
                 }
             ) {
@@ -111,7 +156,7 @@ fun DailyWeatherScreen(
         currentWeather?.let { AppHeader(it,zipCodeEntered,defaultClicked) }
 
         if(currentWeather == null){
-            viewModel.fetchWeather(latitude = sharedPreferences.getFloat("lat",-1f).toDouble(),
+            weatherViewModel.fetchWeather(latitude = sharedPreferences.getFloat("lat",-1f).toDouble(),
                 longitude = sharedPreferences.getFloat("lon",-1f).toDouble())
         }
 
@@ -135,19 +180,15 @@ fun DailyWeatherScreen(
                     ) {
 
                         Image(
-                            painter = painterResource(viewModel.weatherIcon()),
+                            painter = painterResource(weatherViewModel.weatherIcon()),
                             contentDescription = "weatherType"
                         )
                     }
                 }
-
                 currentWeather?.let { HighLow(it) }
                 currentWeather?.let { Stats(it) }
-
             }
-
         }
-
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -217,18 +258,19 @@ fun ZipCode(zipClicked: (Int) -> Unit,defaultClicked:() -> Unit) {
 
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AppHeader(currentWeather: CurrentWeather,zipClicked: (Int) -> Unit,defaultClicked:() -> Unit){
-    var openMenu by remember { mutableStateOf<Boolean?>(null) }
-
+fun AppHeader(
+    currentWeather: CurrentWeather,
+    zipClicked: (Int) -> Unit,
+    defaultClicked: () -> Unit
+){
     Row(
         Modifier
             .padding(bottom = 20.dp, top = 20.dp, start = 40.dp),
         verticalAlignment = Alignment.CenterVertically
-    ){
+    ) {
         Icon(
-            imageVector =  Icons.Default.Place,
+            imageVector = Icons.Default.Place,
             contentDescription = "Location Icon",
             tint = Color.White
         )
@@ -241,28 +283,38 @@ fun AppHeader(currentWeather: CurrentWeather,zipClicked: (Int) -> Unit,defaultCl
                 fontFamily = openSans,
             )
         )
-        Box(
-            modifier = Modifier
-                .fillMaxWidth(),
-            contentAlignment = Alignment.CenterEnd
-        ){
-            Button(
-                onClick = {
-                    openMenu = true
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(255, 255, 255,0)
-                )
-            ) {
-                Icon(
-                    imageVector =  Icons.Default.Menu,
-                    contentDescription = "Location Icon",
-                    tint = Color.White
-                )
-            }
-        }
 
+        MyLocationButton()
+        MenuButton(zipClicked,defaultClicked)
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MenuButton(zipClicked: (Int) -> Unit,defaultClicked:() -> Unit){
+    var openMenu by remember { mutableStateOf<Boolean?>(null) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth(),
+        contentAlignment = Alignment.CenterEnd
+    ){
+        Button(
+            onClick = {
+                openMenu = true
+            },
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Color(255, 255, 255,0)
+            )
+        ) {
+            Icon(
+                imageVector =  Icons.Default.Menu,
+                contentDescription = "Location Icon",
+                tint = Color.White
+            )
+        }
+    }
+
 
     openMenu?.let {
         ModalBottomSheet(
@@ -293,22 +345,90 @@ fun ForecastButton(onForecastClicked: () -> Unit){
     }
 }
 
-@Composable
-fun WeatherIcon(currentWeather: CurrentWeather){
-    val weatherType = currentWeather.weather[0].main
-    var image = painterResource(R.drawable.sun)
-    if (weatherType == "Snow"){
-        image = painterResource(R.drawable.snow)
+fun checkNotificationPerm(
+    context: Context
+): Boolean {
+    var permissionsCheckResult = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS)
+    if(permissionsCheckResult == PackageManager.PERMISSION_GRANTED){
+        permissionsCheckResult = ContextCompat.checkSelfPermission(context, Manifest.permission.FOREGROUND_SERVICE)
+        if(permissionsCheckResult == PackageManager.PERMISSION_GRANTED){
+            return true
+        }
     }
-    else if(weatherType == "Rain"){
-        image = painterResource(R.drawable.rain)
+    return false
+}
+
+fun checkLocationPermission(
+    context: Context
+): Boolean {
+    val permissionsCheckResult = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
+    if(permissionsCheckResult == PackageManager.PERMISSION_GRANTED){
+        return true
+    }
+    else return false
+}
+
+@Composable
+fun MyLocationButton(){
+    val context = LocalContext.current
+
+    val startLocationService = {
+        val intent = Intent(context, LocationService::class.java)
+        ContextCompat.startForegroundService(context, intent)
     }
 
-    Image(
-        painter = image,
-        contentDescription = weatherType
-    )
+    var pendingAction by remember { mutableStateOf(false) }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted && pendingAction) {
+            startLocationService()
+            pendingAction = false
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            if (checkNotificationPerm(context)) {
+                startLocationService()
+            } else {
+                pendingAction = true
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
+        }
+    }
+
+    Button(
+        onClick = {
+            if (checkLocationPermission(context)) {
+                if (checkNotificationPerm(context)) {
+                    startLocationService()
+                } else {
+                    pendingAction = true
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
+            } else {
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            }
+        },
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(255, 255, 255,0)
+        ),
+        shape = CircleShape,
+        modifier = Modifier
+            .size(60.dp),
+        contentPadding = PaddingValues(0.dp)
+    ) {
+        Image(
+            painter = painterResource(R.drawable.my_location_24px) ,
+            contentDescription = "My Location"
+        )
+    }
 }
+
 
 @Composable
 fun LargeTemp(currentWeather: CurrentWeather){
@@ -447,6 +567,7 @@ fun Stats(currentWeather: CurrentWeather){
             }
         }
     }
+
 }
 
 

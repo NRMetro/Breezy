@@ -1,11 +1,12 @@
-package com.example.breezy
+package com.example.breezy.screens
 
+import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -14,10 +15,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.Button
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,15 +28,20 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.breezy.R
+import com.example.breezy.serialobjects.WeatherList
+import com.example.breezy.viewmodels.WeatherViewModel
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.TextStyle
 import java.util.Locale
 
+@SuppressLint("ContextCastToActivity")
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun ExtendedForecastScreen(
@@ -43,6 +51,10 @@ fun ExtendedForecastScreen(
     val forecast by viewModel.forecast.observeAsState()
     val zipCoords by viewModel.coords.observeAsState()
     val sharedPreferences = LocalContext.current.getSharedPreferences("BreezyPrefs", Context.MODE_PRIVATE)
+
+    val window = (LocalContext.current as Activity).window
+    window.statusBarColor = Color.White.toArgb()
+    window.navigationBarColor = Color.White.toArgb()
 
 
     if(zipCoords != null){
@@ -68,7 +80,11 @@ fun ExtendedForecastScreen(
         Button(
             onClick = onBackClicked,
         ) {
-            Text("Return")
+            Icon(
+                imageVector =  Icons.Default.ArrowBack,
+                contentDescription = "Location Icon",
+                tint = Color.White
+            )
         }
         Text(
             text = "Next 14 Days",
@@ -83,7 +99,7 @@ fun ExtendedForecastScreen(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ForecastScreen(forecastItems: List<WeatherList>,viewModel: WeatherViewModel) {
+fun ForecastScreen(forecastItems: List<WeatherList>, viewModel: WeatherViewModel) {
     LazyColumn(
         contentPadding = PaddingValues(10.dp)
     ) {
@@ -95,7 +111,7 @@ fun ForecastScreen(forecastItems: List<WeatherList>,viewModel: WeatherViewModel)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ForecastItemView(weather: WeatherList,viewModel: WeatherViewModel) {
+fun ForecastItemView(weather: WeatherList, viewModel: WeatherViewModel) {
     val context = LocalContext.current
     Row(
         Modifier

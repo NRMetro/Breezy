@@ -9,4 +9,5 @@
     <string name="pressureUnit">%1$d hPa</string>
     <string name="forecastingDate">%1$s, %2$d %3$s</string>
     <string name="forecastPrecip">%1$s %2$.2f</string>
+    <string name="notification">%1$s. Temp:%2$s\n%3$s</string>
 </resources>
