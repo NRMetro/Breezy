@@ -1,5 +1,6 @@
 package com.example.breezy
 
+import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -17,10 +18,10 @@ import androidx.lifecycle.ViewModel
 
 
 
-class LocationViewModel(weatherViewModel: WeatherViewModel) :ViewModel(){
+class LocationViewModel() :ViewModel(){
     private var _location = MutableLiveData<Location?>(null)
     val location: LiveData<Location?> = _location
-    val currentWeather by weatherViewModel.weather.observeAsState()
+
     fun updateLocation(newLocation: Location) {
         if(newLocation.latitude != _location.value?.latitude && newLocation.longitude != _location.value?.longitude){
             _location.value = newLocation

@@ -19,7 +19,6 @@ class WeatherViewModel (
     private val weatherService: WeatherService,
     private val apiKey :String,
     private val zipService: ZipService
-
 ):ViewModel() {
 
     private var _weather: MutableLiveData<CurrentWeather> = MutableLiveData()

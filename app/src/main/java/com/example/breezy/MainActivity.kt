@@ -85,7 +85,6 @@ class MainActivity : ComponentActivity() {
         }
     }
     override fun onStart() {
-
         super.onStart()
         val intent = Intent(this, LocationService::class.java)
         bindService(intent, connection, Context.BIND_AUTO_CREATE)
@@ -105,14 +104,13 @@ class MainActivity : ComponentActivity() {
         weatherViewModel: WeatherViewModel
     ){
         val navController = rememberNavController()
-        val context = LocalContext.current
+
         NavHost(navController = navController, startDestination = DailyWeather){
             composable<DailyWeather>{
                 DailyWeatherScreen(
                     weatherViewModel = weatherViewModel,
                     locationViewModel = locationViewModel,
-                    onForecastClicked = { navController.navigate(ForecastDestination) },
-                    onRequestLocation = { locationViewModel.fetchLocation(service) }
+                    onForecastClicked = { navController.navigate(ForecastDestination) }
                 )
             }
 

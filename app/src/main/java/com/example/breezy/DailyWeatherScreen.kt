@@ -6,6 +6,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -81,8 +82,7 @@ val openSans = FontFamily(Font(R.font.open_sans))
 fun DailyWeatherScreen(
     weatherViewModel: WeatherViewModel,
     locationViewModel: LocationViewModel,
-    onForecastClicked: () -> Unit,
-    onRequestLocation: () -> Unit
+    onForecastClicked: () -> Unit
 ) {
 
     val currentWeather by weatherViewModel.weather.observeAsState()
@@ -122,18 +122,18 @@ fun DailyWeatherScreen(
         }
     }
 
-    LaunchedEffect(currentWeather, needNotification) {
-        if (needNotification) {
-            snapshotFlow { currentWeather }
-                .filterNotNull()
-                .drop(1) // Skip the current value
-                .first() // Wait for the next non-null update
-                .let { updatedWeather ->
-                    updateNotification(updatedWeather, context, weatherViewModel.weatherIcon())
-                }
-            needNotification = false
-        }
-    }
+//    LaunchedEffect(currentWeather, needNotification) {
+//        if (needNotification) {
+//            snapshotFlow { currentWeather }
+//                .filterNotNull()
+//                .drop(1) // Skip the current value
+//                .first() // Wait for the next non-null update
+//                .let { updatedWeather ->
+//                    updateNotification(updatedWeather, context, weatherViewModel.weatherIcon())
+//                }
+//            needNotification = false
+//        }
+//    }
 
     val zipCodeEntered: (Int) -> Unit = { item ->
         weatherViewModel.fetchCoords(item)
@@ -170,7 +170,7 @@ fun DailyWeatherScreen(
             }
         }
 
-        currentWeather?.let { AppHeader(it,zipCodeEntered,defaultClicked,onRequestLocation) }
+        currentWeather?.let { AppHeader(it,zipCodeEntered,defaultClicked) }
 
         if(currentWeather == null){
             weatherViewModel.fetchWeather(latitude = sharedPreferences.getFloat("lat",-1f).toDouble(),
@@ -275,40 +275,11 @@ fun ZipCode(zipClicked: (Int) -> Unit,defaultClicked:() -> Unit) {
 
 }
 
-
-private fun updateNotification(currentWeather: CurrentWeather, context: Context, weatherIcon: Int) :Notification{
-
-    val CHANNEL_DEFAULT_IMPORTANCE = "location_updates_channel"
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val channel = NotificationChannel(
-            CHANNEL_DEFAULT_IMPORTANCE,
-            "Location Updates",
-            NotificationManager.IMPORTANCE_DEFAULT
-        ).apply {
-            description = "Channel for location updates"
-        }
-        val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        notificationManager.createNotificationChannel(channel) // Register the channel
-    }
-
-    val name = currentWeather.name
-    val temp = currentWeather.main.temp
-    val main = currentWeather.weather[0].main
-    return NotificationCompat.Builder(context, CHANNEL_DEFAULT_IMPORTANCE)
-        .setContentTitle("Location Updates")
-        .setContentText("City $name, Temp $temp\nWeather:$main")
-        .setSmallIcon(weatherIcon)  // Ensure you have an icon in resources
-        .build()
-
-}
-
 @Composable
 fun AppHeader(
     currentWeather: CurrentWeather,
     zipClicked: (Int) -> Unit,
-    defaultClicked: () -> Unit,
-    onRequestLocation: () -> Unit
+    defaultClicked: () -> Unit
 ){
     Row(
         Modifier
@@ -330,7 +301,7 @@ fun AppHeader(
             )
         )
 
-        MyLocationButton(onRequestLocation)
+        MyLocationButton()
         MenuButton(zipClicked,defaultClicked)
     }
 }
@@ -415,7 +386,7 @@ fun checkLocationPermission(
 }
 
 @Composable
-fun MyLocationButton(onRequestLocation:() -> Unit){
+fun MyLocationButton(){
     val context = LocalContext.current
 
     val launcher  = rememberLauncherForActivityResult(
@@ -433,8 +404,13 @@ fun MyLocationButton(onRequestLocation:() -> Unit){
     Button(
         onClick = {
             if(checkLocationPermission(context)){
-                startForeground(1, updateNotification())
-                onRequestLocation()
+                if(checkNotificationPerm(context)){
+                    val intent = Intent(context, LocationService::class.java)
+                    ContextCompat.startForegroundService(context, intent)
+                }
+                else{
+                    launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                }
             }
             else{
                 launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
