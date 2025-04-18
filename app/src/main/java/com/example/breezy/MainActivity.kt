@@ -17,12 +17,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModelProvider
 import com.example.breezy.ui.theme.BreezyTheme
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.breezy.screens.DailyWeatherScreen
+import com.example.breezy.screens.ExtendedForecastScreen
+import com.example.breezy.services.LocationService
+import com.example.breezy.services.WeatherService
+import com.example.breezy.services.ZipService
+import com.example.breezy.viewmodels.LocationViewModel
+import com.example.breezy.viewmodels.WeatherViewModel
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -120,14 +126,9 @@ class MainActivity : ComponentActivity() {
                     onBackClicked = { navController.popBackStack() }
                 )
             }
-
         }
-
     }
 }
-
-
-
 
 fun createRetrofitService(): WeatherService {
     val logging = HttpLoggingInterceptor()
@@ -162,11 +163,3 @@ fun createRetrofitServiceZip(): ZipService {
         .build()
         .create(ZipService::class.java)
 }
-
-//@Preview(showBackground = true)
-//@Composable
-//fun FrontPreview(){
-//    BreezyTheme {
-//        WeatherScreen()
-//    }
-//}

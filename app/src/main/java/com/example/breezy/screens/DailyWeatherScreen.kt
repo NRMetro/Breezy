@@ -1,10 +1,7 @@
-package com.example.breezy
+package com.example.breezy.screens
 import android.Manifest
 import android.annotation.SuppressLint
 import android.app.Activity
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.Image
@@ -62,18 +59,15 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.content.pm.PackageManager
-import android.os.Build
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.runtime.snapshotFlow
-import androidx.core.app.NotificationCompat
-import androidx.core.app.ServiceCompat.startForeground
 import androidx.core.content.ContextCompat
-import kotlinx.coroutines.flow.drop
-import kotlinx.coroutines.flow.filterNotNull
-import kotlinx.coroutines.flow.first
-
+import com.example.breezy.serialobjects.CurrentWeather
+import com.example.breezy.services.LocationService
+import com.example.breezy.viewmodels.LocationViewModel
+import com.example.breezy.R
+import com.example.breezy.viewmodels.WeatherViewModel
 
 val openSans = FontFamily(Font(R.font.open_sans))
 
@@ -122,18 +116,7 @@ fun DailyWeatherScreen(
         }
     }
 
-//    LaunchedEffect(currentWeather, needNotification) {
-//        if (needNotification) {
-//            snapshotFlow { currentWeather }
-//                .filterNotNull()
-//                .drop(1) // Skip the current value
-//                .first() // Wait for the next non-null update
-//                .let { updatedWeather ->
-//                    updateNotification(updatedWeather, context, weatherViewModel.weatherIcon())
-//                }
-//            needNotification = false
-//        }
-//    }
+
 
     val zipCodeEntered: (Int) -> Unit = { item ->
         weatherViewModel.fetchCoords(item)
@@ -389,35 +372,47 @@ fun checkLocationPermission(
 fun MyLocationButton(){
     val context = LocalContext.current
 
-    val launcher  = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if(granted){
-            Log.d("LocationService","Got Permission")
-        }
-        else{
-            Log.d("LocationService","Need Permission")
+    val startLocationService = {
+        val intent = Intent(context, LocationService::class.java)
+        ContextCompat.startForegroundService(context, intent)
+    }
 
+    var pendingAction by remember { mutableStateOf(false) }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted && pendingAction) {
+            startLocationService()
+            pendingAction = false
+        }
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            if (checkNotificationPerm(context)) {
+                startLocationService()
+            } else {
+                pendingAction = true
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            }
         }
     }
 
     Button(
         onClick = {
-            if(checkLocationPermission(context)){
-                if(checkNotificationPerm(context)){
-                    val intent = Intent(context, LocationService::class.java)
-                    ContextCompat.startForegroundService(context, intent)
+            if (checkLocationPermission(context)) {
+                if (checkNotificationPerm(context)) {
+                    startLocationService()
+                } else {
+                    pendingAction = true
+                    notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
                 }
-                else{
-                    launcher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                }
+            } else {
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }
-            else{
-                launcher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
-            }
-
-
-
         },
         colors = ButtonDefaults.buttonColors(
             containerColor = Color(255, 255, 255,0)

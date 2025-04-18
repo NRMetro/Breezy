@@ -1,4 +1,4 @@
-package com.example.breezy
+package com.example.breezy.services
 
 import android.annotation.SuppressLint
 import android.app.Notification
@@ -14,6 +14,7 @@ import android.os.IBinder
 import android.os.Looper
 import android.util.Log
 import androidx.core.app.NotificationCompat
+import com.example.breezy.R
 import com.google.android.gms.location.FusedLocationProviderClient
 import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
@@ -34,8 +35,11 @@ class LocationService: Service() {
     private var locationListener: ((Location) -> Unit)? = null
     private var location: Location? = null
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private var weatherName: String = "Loading"
     private var weatherTemp: String = "Loading"
     private var weatherCondition: String = "Loading"
+    private var weatherIcon: Int = R.drawable.sun
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     inner class LocalBinder : Binder() {
         fun getService(): LocationService = this@LocationService
@@ -44,9 +48,6 @@ class LocationService: Service() {
     override fun onBind(intent: Intent?): IBinder {
         return binder
     }
-
-    // Location client
-    private lateinit var fusedLocationClient: FusedLocationProviderClient
 
     override fun onCreate() {
         super.onCreate()
@@ -62,26 +63,12 @@ class LocationService: Service() {
             .setSmallIcon(R.drawable.sun)
             .build()
 
-
         startForeground(1,initialNotification)
         startLocationUpdates()
 
         return START_STICKY
     }
 
-    @SuppressLint("MissingPermission")
-    fun fetchLocationAndWeather(onResult: (Location?) -> Unit) {
-        Log.d("LocationService", "Trying to fetch location...")
-        fusedLocationClient.lastLocation
-            .addOnSuccessListener { location ->
-                onResult(location)
-            }
-            .addOnFailureListener {
-                Log.e("LocationService", "Failed to get location", it)
-            }
-
-        startLocationUpdates()
-    }
 
     @SuppressLint("MissingPermission")
     private fun startLocationUpdates(){
@@ -137,11 +124,11 @@ class LocationService: Service() {
             notificationManager.createNotificationChannel(channel) // Register the channel
         }
 
-
+        val notifcationText = getString(R.string.notification,weatherName,weatherTemp,weatherCondition)
         return NotificationCompat.Builder(this, CHANNEL_DEFAULT_IMPORTANCE)
-            .setContentTitle("Location Updates")
-            .setContentText("City ., Temp $weatherTemp\nWeather:$weatherCondition")
-            .setSmallIcon(R.drawable.sun)
+            .setContentTitle("Current Weather")
+            .setContentText(notifcationText)
+            .setSmallIcon(weatherIcon)
             .build()
 
     }
@@ -149,18 +136,31 @@ class LocationService: Service() {
     suspend fun fetchWeather(lat: Double, lon: Double) {
         val apiKey = getString(R.string.weather_api_key)
         val url =
-            "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&units=metric&appid=$apiKey"
+            "https://api.openweathermap.org/data/2.5/weather?lat=$lat&lon=$lon&units=imperial&appid=$apiKey"
 
         val response = withContext(Dispatchers.IO) {
-            URL(url).readText() // Simplified for example
+            URL(url).readText()
         }
 
         val json = JSONObject(response)
-        val temp = json.getJSONObject("main").getDouble("temp").toString()
-        val weather = json.getJSONArray("weather").getJSONObject(0).getString("main")
+        weatherName = json.getString("name").toString()
+        weatherTemp = json.getJSONObject("main").getDouble("temp").toString()
+        weatherCondition = json.getJSONArray("weather").getJSONObject(0).getString("main")
+        weatherIcon = weatherIcon(weatherCondition)
+    }
 
-        weatherTemp = temp
-        weatherCondition = weather
+    fun weatherIcon(weatherType:String): Int {
+        var image = R.drawable.sun
+        if (weatherType == "Snow"){
+            image = R.drawable.snow
+        }
+        else if(weatherType == "Rain"){
+            image = R.drawable.rain
+        }
+        else if(weatherType == "Clouds"){
+            image = R.drawable.partly_cloudy
+        }
 
+        return image
     }
 }

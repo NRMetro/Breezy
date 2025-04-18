@@ -1,4 +1,4 @@
-package com.example.breezy
+package com.example.breezy.screens
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -7,7 +7,6 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -16,12 +15,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.Place
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -36,6 +33,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.breezy.R
+import com.example.breezy.serialobjects.WeatherList
+import com.example.breezy.viewmodels.WeatherViewModel
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.TextStyle
@@ -99,7 +99,7 @@ fun ExtendedForecastScreen(
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ForecastScreen(forecastItems: List<WeatherList>,viewModel: WeatherViewModel) {
+fun ForecastScreen(forecastItems: List<WeatherList>, viewModel: WeatherViewModel) {
     LazyColumn(
         contentPadding = PaddingValues(10.dp)
     ) {
@@ -111,7 +111,7 @@ fun ForecastScreen(forecastItems: List<WeatherList>,viewModel: WeatherViewModel)
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ForecastItemView(weather: WeatherList,viewModel: WeatherViewModel) {
+fun ForecastItemView(weather: WeatherList, viewModel: WeatherViewModel) {
     val context = LocalContext.current
     Row(
         Modifier

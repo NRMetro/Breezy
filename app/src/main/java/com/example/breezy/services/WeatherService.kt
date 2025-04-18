@@ -1,5 +1,7 @@
-package com.example.breezy
+package com.example.breezy.services
 
+import com.example.breezy.serialobjects.CurrentWeather
+import com.example.breezy.serialobjects.Forecast
 import retrofit2.Call
 import retrofit2.http.GET
 import retrofit2.http.Query
