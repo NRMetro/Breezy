@@ -3,13 +3,18 @@ package com.example.breezy.serialobjects
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
+val forecastItem = WeatherList(0L,0L,0L,Temp(0.0,0.0,0.0,0.0,0.0,0.0),
+    FeelsLike(0.0,0.0,0.0,0.0),0,0,arrayListOf(Weather(0,"","","")),0.0,0,0.0,0,
+    0.0,0.0,0.0)
+
 @Serializable
 data class Forecast(
-    val city: City,
-    val cod: Int,
-    val message: Double,
-    val cnt: Int,
-    val list: ArrayList<WeatherList>
+    val city: City = City(0,"",Coord(0.0,0.0),"",0,0),
+    val cod: Int = 0,
+    val message: Double = 0.0,
+    val cnt: Int = 0,
+    val list: ArrayList<WeatherList> = arrayListOf(forecastItem,forecastItem,forecastItem,forecastItem,forecastItem,forecastItem,forecastItem,
+        forecastItem,forecastItem,forecastItem,forecastItem,forecastItem,forecastItem,forecastItem)
 )
 
 @Serializable

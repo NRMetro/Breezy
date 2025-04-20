@@ -1,109 +1,82 @@
 package com.example.breezy.viewmodels
 
-
-import android.util.Log
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.breezy.R
 import com.example.breezy.serialobjects.CurrentWeather
 import com.example.breezy.serialobjects.Forecast
 import com.example.breezy.serialobjects.ZipCoords
 import com.example.breezy.services.WeatherService
 import com.example.breezy.services.ZipService
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
-class WeatherViewModel (
+open class WeatherViewModel (
     private val weatherService: WeatherService,
     private val apiKey :String,
-    private val zipService: ZipService
+    private val zipService: ZipService,
+    private val dispatcher: CoroutineDispatcher,
 ):ViewModel() {
 
-    private var _weather: MutableLiveData<CurrentWeather> = MutableLiveData()
-    val weather: LiveData<CurrentWeather> = _weather
+    private var _weather: MutableStateFlow<CurrentWeather> = MutableStateFlow(CurrentWeather())
+    val weather: StateFlow<CurrentWeather> = _weather
 
-    private var _coords: MutableLiveData<ZipCoords> = MutableLiveData()
-    val coords: LiveData<ZipCoords> = _coords
+    private var _coords: MutableStateFlow<ZipCoords> = MutableStateFlow(ZipCoords())
+    val coords: StateFlow<ZipCoords> = _coords
 
-    private var _forecast: MutableLiveData<Forecast> = MutableLiveData()
-    val forecast: LiveData<Forecast> = _forecast
+    private var _forecast: MutableStateFlow<Forecast> = MutableStateFlow(Forecast())
+    val forecast: StateFlow<Forecast> = _forecast
 
-    private var _errorMessage: MutableState<String?> = mutableStateOf(null)
-    val errorMessage: State<String?> = _errorMessage
+    private var _errorMessage: MutableStateFlow<String?> = MutableStateFlow(null)
+    val errorMessage: StateFlow<String?> = _errorMessage
 
-    fun fetchWeather(latitude: Double, longitude:Double){
-        val call = weatherService.getWeather(latitude = latitude, longitude = longitude,apiKey = apiKey, unitType = "imperial")
+    fun fetchWeather(latitude: Double, longitude:Double) = viewModelScope.launch(dispatcher){
+        val response = weatherService.getWeather(latitude = latitude, longitude = longitude,apiKey = apiKey, unitType = "imperial")
+        if (response.isSuccessful) {
+            _weather.value = response.body()!!
 
-        call.enqueue(object: Callback<CurrentWeather>{
-            override fun onResponse(p0: Call<CurrentWeather>, p1: Response<CurrentWeather>) {
-                _weather.value = p1.body()
-                //Reassign coords to new value in case of direct use of coords with locationservices
-                if(latitude != coords.value?.lat){
-                    _coords.value =
-                        weather.value?.let {
-                            ZipCoords(0,it.name,latitude,longitude, it.sys.country)
-                        }
-                }
-
+            if(latitude != coords.value.lat){
+                _coords.value = ZipCoords(0,weather.value.name,latitude,longitude, weather.value.sys.country)
             }
-
-            override fun onFailure(p0: Call<CurrentWeather>, p1: Throwable) {
-                _errorMessage.value  = "Failed to get weather at latitude $latitude and longitude $longitude"
-                Log.e("Weather", "Failed Call", p1)
-            }
-        })
+        }
+        else{
+            _errorMessage.value  = "Failed to get weather at latitude $latitude and longitude $longitude"
+        }
     }
 
-    fun fetchCoords(zipCode:Int){
-        val call = zipService.getZip(zipCode = zipCode,apiKey = apiKey)
+    fun fetchCoords(zipCode:Int) = viewModelScope.launch(dispatcher){
+        val response = zipService.getZip(zipCode = zipCode,apiKey = apiKey)
+        if (response.isSuccessful) {
+            _coords.value = response.body()!!
+        }
+        else{
+            _errorMessage.value = "Failed to find zip code $zipCode"
+        }
 
-        call.enqueue(object: Callback<ZipCoords>{
-            override fun onResponse(p0: Call<ZipCoords>, p1: Response<ZipCoords>) {
-                if(p1.message() == "OK"){
-                    _coords.value = p1.body()
-                }
-                else{
-                    _errorMessage.value = "Zip " + p1.message()
-                }
-
-            }
-
-            override fun onFailure(p0: Call<ZipCoords>, p1: Throwable) {
-                _errorMessage.value = "Failed to find zip code $zipCode"
-                Log.e("Weather", "Failed Call", p1)
-            }
-        })
     }
 
     fun errorShown(){
         _errorMessage.value = null
     }
 
-    fun fetchForecast(latitude: Double, longitude:Double){
-        val call = weatherService.getForecast(latitude = latitude, longitude = longitude,apiKey = apiKey, unitType = "imperial", count = 14)
-        call.enqueue(object: Callback<Forecast>{
-            override fun onResponse(p0: Call<Forecast>, p1: Response<Forecast>) {
-                _forecast.value = p1.body()
-            }
+    fun fetchForecast(latitude: Double, longitude:Double) = viewModelScope.launch(dispatcher){
+        val response = weatherService.getForecast(latitude = latitude, longitude = longitude,apiKey = apiKey, unitType = "imperial", count = 14)
 
-            override fun onFailure(p0: Call<Forecast>, p1: Throwable) {
-                _errorMessage.value  = "Failed to get forecast at latitude $latitude and longitude $longitude"
-                Log.e("Weather", "Failed Call", p1)
-            }
-        })
+        if (response.isSuccessful) {
+            _forecast.value = response.body()!!
+        }
+        else{
+            _errorMessage.value  = "Failed to get forecast at latitude $latitude and longitude $longitude"
+        }
+
     }
 
     fun weatherIcon(): Int {
         var weatherType = ""
-        this.weather.value?.let { currentWeather ->
-            weatherType = currentWeather.weather[0].main
+        weatherType = this.weather.value.weather[0].main
 
-        }
         return weatherIcon(weatherType)
     }
 

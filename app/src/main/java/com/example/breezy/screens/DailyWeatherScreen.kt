@@ -38,7 +38,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -62,7 +61,9 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.collectAsState
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.breezy.serialobjects.CurrentWeather
 import com.example.breezy.services.LocationService
 import com.example.breezy.viewmodels.LocationViewModel
@@ -78,25 +79,21 @@ fun DailyWeatherScreen(
     locationViewModel: LocationViewModel,
     onForecastClicked: () -> Unit
 ) {
-
-    val currentWeather by weatherViewModel.weather.observeAsState()
-    val zipCoords by weatherViewModel.coords.observeAsState()
+    val currentWeather by weatherViewModel.weather.collectAsState()
+    val zipCoords by weatherViewModel.coords.collectAsState()
     val sharedPreferences = LocalContext.current.getSharedPreferences("BreezyPrefs",Context.MODE_PRIVATE)
-    val errorMessage by weatherViewModel.errorMessage
-    val locService by locationViewModel.location.observeAsState()
+    val errorMessage by weatherViewModel.errorMessage.collectAsState()
+    val locService by locationViewModel.location.collectAsState()
     val context = LocalContext.current
     var needNotification by remember { mutableStateOf(false) }
 
     LaunchedEffect(zipCoords) {
-        zipCoords?.let { coords ->
-            weatherViewModel.fetchWeather(
-                    latitude = coords.lat,
-                    longitude = coords.lon
-            )
-            if(checkNotificationPerm(context)){
-                needNotification = true
-            }
-
+        weatherViewModel.fetchWeather(
+                latitude = zipCoords.lat,
+                longitude = zipCoords.lon
+        )
+        if(checkNotificationPerm(context)){
+            needNotification = true
         }
     }
 
@@ -116,18 +113,14 @@ fun DailyWeatherScreen(
         }
     }
 
-
-
     val zipCodeEntered: (Int) -> Unit = { item ->
         weatherViewModel.fetchCoords(item)
     }
     val defaultClicked: () -> Unit = {
         val editor = sharedPreferences.edit()
-        zipCoords?.let { coords ->
-            editor.putFloat("lon", coords.lon.toFloat())
-            editor.putFloat("lat", coords.lat.toFloat())
-            editor.apply()
-        }
+        editor.putFloat("lon", zipCoords.lon.toFloat())
+        editor.putFloat("lat", zipCoords.lat.toFloat())
+        editor.apply()
     }
 
     val window = (LocalContext.current as Activity).window
@@ -153,12 +146,14 @@ fun DailyWeatherScreen(
             }
         }
 
-        currentWeather?.let { AppHeader(it,zipCodeEntered,defaultClicked) }
-
-        if(currentWeather == null){
+        if(currentWeather.name == ""){
             weatherViewModel.fetchWeather(latitude = sharedPreferences.getFloat("lat",-1f).toDouble(),
                 longitude = sharedPreferences.getFloat("lon",-1f).toDouble())
         }
+
+        AppHeader(currentWeather,zipCodeEntered,defaultClicked)
+
+
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -174,7 +169,7 @@ fun DailyWeatherScreen(
             ) {
 
                 Row(){
-                    currentWeather?.let { LargeTemp(it) }
+                    LargeTemp(currentWeather)
                     Column(
                         modifier = Modifier.padding(top = 50.dp)
                     ) {
@@ -185,8 +180,8 @@ fun DailyWeatherScreen(
                         )
                     }
                 }
-                currentWeather?.let { HighLow(it) }
-                currentWeather?.let { Stats(it) }
+                HighLow(currentWeather)
+                Stats(currentWeather)
             }
         }
 

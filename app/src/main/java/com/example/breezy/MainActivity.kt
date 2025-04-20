@@ -29,6 +29,7 @@ import com.example.breezy.services.WeatherService
 import com.example.breezy.services.ZipService
 import com.example.breezy.viewmodels.LocationViewModel
 import com.example.breezy.viewmodels.WeatherViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType
@@ -69,13 +70,13 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val weatherService = createRetrofitService()
-        val zipService = createRetrofitServiceZip()
+        val weatherService = WeatherService.weatherService
+        val zipService = ZipService.zipService
 
         val apiKey = resources.getString(R.string.weather_api_key)
-        val weatherViewModel = WeatherViewModel( weatherService,apiKey,zipService)
+        val weatherViewModel = WeatherViewModel( weatherService,apiKey,zipService, Dispatchers.IO,)
 
-        locationViewModel = ViewModelProvider(this)[LocationViewModel::class.java]
+        locationViewModel = LocationViewModel(Dispatchers.IO)
 
         setContent {
             BreezyTheme {
@@ -128,38 +129,4 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
-}
-
-fun createRetrofitService(): WeatherService {
-    val logging = HttpLoggingInterceptor()
-    logging.setLevel(HttpLoggingInterceptor.Level.BODY)
-    val client: OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(logging)
-        .build()
-    return Retrofit.Builder()
-        .baseUrl("https://api.openweathermap.org/data/2.5/")
-        .client(client)
-        .addConverterFactory(
-            Json.asConverterFactory(
-            "application/json".toMediaType()
-        ))
-        .build()
-        .create(WeatherService::class.java)
-}
-
-fun createRetrofitServiceZip(): ZipService {
-    val logging = HttpLoggingInterceptor()
-    logging.setLevel(HttpLoggingInterceptor.Level.BODY)
-    val client: OkHttpClient = OkHttpClient.Builder()
-        .addInterceptor(logging)
-        .build()
-    return Retrofit.Builder()
-        .baseUrl("https://api.openweathermap.org/geo/1.0/")
-        .client(client)
-        .addConverterFactory(
-            Json.asConverterFactory(
-                "application/json".toMediaType()
-            ))
-        .build()
-        .create(ZipService::class.java)
 }
