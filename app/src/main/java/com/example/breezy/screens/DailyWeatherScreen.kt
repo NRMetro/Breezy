@@ -62,6 +62,7 @@ import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.testTag
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.breezy.serialobjects.CurrentWeather
@@ -89,12 +90,13 @@ fun DailyWeatherScreen(
 
     LaunchedEffect(zipCoords) {
         weatherViewModel.fetchWeather(
-                latitude = zipCoords.lat,
-                longitude = zipCoords.lon
+            latitude = zipCoords.lat,
+            longitude = zipCoords.lon
         )
         if(checkNotificationPerm(context)){
             needNotification = true
         }
+
     }
 
     LaunchedEffect(locService) {
@@ -146,7 +148,7 @@ fun DailyWeatherScreen(
             }
         }
 
-        if(currentWeather.name == ""){
+        if(currentWeather.name == "" && sharedPreferences.getFloat("lat",-1f).toDouble() != -1.0){
             weatherViewModel.fetchWeather(latitude = sharedPreferences.getFloat("lat",-1f).toDouble(),
                 longitude = sharedPreferences.getFloat("lon",-1f).toDouble())
         }
@@ -300,7 +302,9 @@ fun MenuButton(zipClicked: (Int) -> Unit,defaultClicked:() -> Unit){
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(255, 255, 255,0)
-            )
+            ),
+            modifier = Modifier
+                .testTag("MenuButton")
         ) {
             Icon(
                 imageVector =  Icons.Default.Menu,
@@ -334,6 +338,8 @@ fun ForecastButton(onForecastClicked: () -> Unit){
         Button(
             onClick = onForecastClicked,
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF695dec)),
+            modifier = Modifier
+                .testTag("ForecastButton")
         ) {
             Text("Check Forecast")
         }
@@ -414,7 +420,8 @@ fun MyLocationButton(){
         ),
         shape = CircleShape,
         modifier = Modifier
-            .size(60.dp),
+            .size(60.dp)
+            .testTag("LocationButton"),
         contentPadding = PaddingValues(0.dp)
     ) {
         Image(

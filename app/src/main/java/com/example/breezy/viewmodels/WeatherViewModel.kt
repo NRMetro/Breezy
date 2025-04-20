@@ -33,16 +33,18 @@ open class WeatherViewModel (
     val errorMessage: StateFlow<String?> = _errorMessage
 
     fun fetchWeather(latitude: Double, longitude:Double) = viewModelScope.launch(dispatcher){
-        val response = weatherService.getWeather(latitude = latitude, longitude = longitude,apiKey = apiKey, unitType = "imperial")
-        if (response.isSuccessful) {
-            _weather.value = response.body()!!
+        if(latitude != 0.0){
+            val response = weatherService.getWeather(latitude = latitude, longitude = longitude,apiKey = apiKey, unitType = "imperial")
+            if (response.isSuccessful) {
+                _weather.value = response.body()!!
 
-            if(latitude != coords.value.lat){
-                _coords.value = ZipCoords(0,weather.value.name,latitude,longitude, weather.value.sys.country)
+                if(latitude != _coords.value.lat){
+                    _coords.value = ZipCoords(0,weather.value.name,latitude,longitude, weather.value.sys.country)
+                }
             }
-        }
-        else{
-            _errorMessage.value  = "Failed to get weather at latitude $latitude and longitude $longitude"
+            else{
+                _errorMessage.value  = "Failed to get weather at latitude $latitude and longitude $longitude"
+            }
         }
     }
 

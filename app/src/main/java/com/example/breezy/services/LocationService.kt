@@ -56,6 +56,19 @@ class LocationService: Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.d("LocationService", "onStartCommand triggered")
+        val CHANNEL_DEFAULT_IMPORTANCE = "location_updates_channel"
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                CHANNEL_DEFAULT_IMPORTANCE,
+                "Location Updates",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply {
+                description = "Channel for location updates"
+            }
+            val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(channel) // Register the channel
+        }
 
         val initialNotification = NotificationCompat.Builder(this, "location_updates_channel")
             .setContentTitle("Starting Location Updates...")
