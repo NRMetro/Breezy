@@ -50,7 +50,7 @@ fun ExtendedForecastScreen(
     onBackClicked: () -> Unit
 ){
     val forecast by viewModel.forecast.collectAsState()
-    val zipCoords by viewModel.coords.collectAsState()
+    val weather by viewModel.weather.collectAsState()
     val sharedPreferences = LocalContext.current.getSharedPreferences("BreezyPrefs", Context.MODE_PRIVATE)
 
     val window = (LocalContext.current as Activity).window
@@ -58,10 +58,10 @@ fun ExtendedForecastScreen(
     window.navigationBarColor = Color.White.toArgb()
 
 
-    if(zipCoords.lat != 0.0){
+    if(weather.coord.lat != 0.0){
         viewModel.fetchForecast(
-            latitude = zipCoords.lat,
-            longitude = zipCoords.lon
+            latitude = weather.coord.lat,
+            longitude = weather.coord.lon
         )
     }
     else {

@@ -149,9 +149,9 @@ fun DailyWeatherScreen(
             }
         }
 
-        if(currentWeather.name == "" && sharedPreferences.getFloat("lat",-1f).toDouble() != -1.0){
-            weatherViewModel.fetchWeather(latitude = sharedPreferences.getFloat("lat",-1f).toDouble(),
-                longitude = sharedPreferences.getFloat("lon",-1f).toDouble())
+        if(currentWeather.name == "" && sharedPreferences.getFloat("lat",0f).toDouble() != 0.0){
+            weatherViewModel.fetchWeather(latitude = sharedPreferences.getFloat("lat",0f).toDouble(),
+                longitude = sharedPreferences.getFloat("lon",0f).toDouble())
         }
 
         AppHeader(currentWeather,zipCodeEntered,defaultClicked)
