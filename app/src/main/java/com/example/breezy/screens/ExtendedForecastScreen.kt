@@ -30,6 +30,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -57,17 +58,15 @@ fun ExtendedForecastScreen(
     window.navigationBarColor = Color.White.toArgb()
 
 
-    if(zipCoords != null){
-        zipCoords?.let { coords ->
-            viewModel.fetchForecast(
-                latitude = coords.lat,
-                longitude = coords.lon
-            )
-        }
+    if(zipCoords.lat != 0.0){
+        viewModel.fetchForecast(
+            latitude = zipCoords.lat,
+            longitude = zipCoords.lon
+        )
     }
-    else if(forecast == null){
-        viewModel.fetchForecast(latitude = sharedPreferences.getFloat("lat",-1f).toDouble(),
-            longitude = sharedPreferences.getFloat("lon",-1f).toDouble())
+    else {
+        viewModel.fetchForecast(latitude = sharedPreferences.getFloat("lat",0f).toDouble(),
+            longitude = sharedPreferences.getFloat("lon",0f).toDouble())
     }
 
 
@@ -79,6 +78,8 @@ fun ExtendedForecastScreen(
     ) {
         Button(
             onClick = onBackClicked,
+            modifier = Modifier
+                .testTag("BackButton")
         ) {
             Icon(
                 imageVector =  Icons.Default.ArrowBack,
@@ -91,9 +92,8 @@ fun ExtendedForecastScreen(
             fontSize = 26.sp
         )
 
-        forecast?.let{ forecast ->
-            ForecastScreen(forecast.list,viewModel)
-        }
+        ForecastScreen(forecast.list,viewModel)
+
     }
 }
 
@@ -101,10 +101,15 @@ fun ExtendedForecastScreen(
 @Composable
 fun ForecastScreen(forecastItems: List<WeatherList>, viewModel: WeatherViewModel) {
     LazyColumn(
+        modifier = Modifier
+            .testTag("ForecastList"),
         contentPadding = PaddingValues(10.dp)
     ) {
         items(forecastItems){ forecastItem ->
-            ForecastItemView(forecastItem,viewModel)
+            Box(Modifier.testTag("ForecastItem")){
+                ForecastItemView(forecastItem,viewModel)
+            }
+
         }
     }
 }

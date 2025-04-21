@@ -140,7 +140,9 @@ fun DailyWeatherScreen(
                 dismissAction = {
                     Text(
                         "OK",
-                        modifier = Modifier.clickable { weatherViewModel.errorShown() }
+                        modifier = Modifier
+                            .clickable { weatherViewModel.errorShown() }
+                            .testTag("ErrorShown")
                     )
                 }
             ) {
@@ -430,7 +432,6 @@ fun MyLocationButton(){
         )
     }
 }
-
 
 @Composable
 fun LargeTemp(currentWeather: CurrentWeather){
