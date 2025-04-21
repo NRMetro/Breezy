@@ -11,6 +11,7 @@ import com.example.breezy.viewmodels.WeatherViewModel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
@@ -49,13 +50,16 @@ class WeatherViewModelTest{
         assertNotNull(viewModel.errorMessage.value)
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `check CurrentWeather pass and fail` () = runTest(dispatcher){
         val lat = 5.5
         val lon = 6.5
         val currentWeather = CurrentWeather(Coord(lon,lat))
+
         weatherService.weatherResponse = currentWeather
         viewModel.fetchWeather(lat,lon)
+        advanceUntilIdle()
 
         assertEquals(currentWeather, viewModel.weather.value)
 

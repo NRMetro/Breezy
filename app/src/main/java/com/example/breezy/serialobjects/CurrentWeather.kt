@@ -5,7 +5,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CurrentWeather(
-    val coord: Coord = Coord(-93.86,45.18),
+    val coord: Coord = Coord(0.0,0.0),
     val weather: List<Weather> = listOf(Weather(0,"main","desc","")) ,
     val base: String = "",
     val main: Main = Main(0.0,0.0,0.0,0.0,0,0,0,0),
