@@ -38,7 +38,6 @@ import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -62,6 +61,8 @@ import android.content.pm.PackageManager
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.runtime.collectAsState
+import androidx.compose.ui.platform.testTag
 import androidx.core.content.ContextCompat
 import com.example.breezy.serialobjects.CurrentWeather
 import com.example.breezy.services.LocationService
@@ -78,26 +79,23 @@ fun DailyWeatherScreen(
     locationViewModel: LocationViewModel,
     onForecastClicked: () -> Unit
 ) {
-
-    val currentWeather by weatherViewModel.weather.observeAsState()
-    val zipCoords by weatherViewModel.coords.observeAsState()
+    val currentWeather by weatherViewModel.weather.collectAsState()
+    val zipCoords by weatherViewModel.coords.collectAsState()
     val sharedPreferences = LocalContext.current.getSharedPreferences("BreezyPrefs",Context.MODE_PRIVATE)
-    val errorMessage by weatherViewModel.errorMessage
-    val locService by locationViewModel.location.observeAsState()
+    val errorMessage by weatherViewModel.errorMessage.collectAsState()
+    val locService by locationViewModel.location.collectAsState()
     val context = LocalContext.current
     var needNotification by remember { mutableStateOf(false) }
 
     LaunchedEffect(zipCoords) {
-        zipCoords?.let { coords ->
-            weatherViewModel.fetchWeather(
-                    latitude = coords.lat,
-                    longitude = coords.lon
-            )
-            if(checkNotificationPerm(context)){
-                needNotification = true
-            }
-
+        weatherViewModel.fetchWeather(
+            latitude = zipCoords.lat,
+            longitude = zipCoords.lon
+        )
+        if(checkNotificationPerm(context)){
+            needNotification = true
         }
+
     }
 
     LaunchedEffect(locService) {
@@ -116,18 +114,14 @@ fun DailyWeatherScreen(
         }
     }
 
-
-
     val zipCodeEntered: (Int) -> Unit = { item ->
         weatherViewModel.fetchCoords(item)
     }
     val defaultClicked: () -> Unit = {
         val editor = sharedPreferences.edit()
-        zipCoords?.let { coords ->
-            editor.putFloat("lon", coords.lon.toFloat())
-            editor.putFloat("lat", coords.lat.toFloat())
-            editor.apply()
-        }
+        editor.putFloat("lon", zipCoords.lon.toFloat())
+        editor.putFloat("lat", zipCoords.lat.toFloat())
+        editor.apply()
     }
 
     val window = (LocalContext.current as Activity).window
@@ -145,7 +139,9 @@ fun DailyWeatherScreen(
                 dismissAction = {
                     Text(
                         "OK",
-                        modifier = Modifier.clickable { weatherViewModel.errorShown() }
+                        modifier = Modifier
+                            .clickable { weatherViewModel.errorShown() }
+                            .testTag("ErrorShown")
                     )
                 }
             ) {
@@ -153,12 +149,14 @@ fun DailyWeatherScreen(
             }
         }
 
-        currentWeather?.let { AppHeader(it,zipCodeEntered,defaultClicked) }
-
-        if(currentWeather == null){
-            weatherViewModel.fetchWeather(latitude = sharedPreferences.getFloat("lat",-1f).toDouble(),
-                longitude = sharedPreferences.getFloat("lon",-1f).toDouble())
+        if(currentWeather.name == "" && sharedPreferences.getFloat("lat",0f).toDouble() != 0.0){
+            weatherViewModel.fetchWeather(latitude = sharedPreferences.getFloat("lat",0f).toDouble(),
+                longitude = sharedPreferences.getFloat("lon",0f).toDouble())
         }
+
+        AppHeader(currentWeather,zipCodeEntered,defaultClicked)
+
+
 
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -173,8 +171,8 @@ fun DailyWeatherScreen(
                     )
             ) {
 
-                Row(){
-                    currentWeather?.let { LargeTemp(it) }
+                Row{
+                    LargeTemp(currentWeather)
                     Column(
                         modifier = Modifier.padding(top = 50.dp)
                     ) {
@@ -185,8 +183,8 @@ fun DailyWeatherScreen(
                         )
                     }
                 }
-                currentWeather?.let { HighLow(it) }
-                currentWeather?.let { Stats(it) }
+                HighLow(currentWeather)
+                Stats(currentWeather)
             }
         }
 
@@ -305,7 +303,9 @@ fun MenuButton(zipClicked: (Int) -> Unit,defaultClicked:() -> Unit){
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = Color(255, 255, 255,0)
-            )
+            ),
+            modifier = Modifier
+                .testTag("MenuButton")
         ) {
             Icon(
                 imageVector =  Icons.Default.Menu,
@@ -339,6 +339,8 @@ fun ForecastButton(onForecastClicked: () -> Unit){
         Button(
             onClick = onForecastClicked,
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF695dec)),
+            modifier = Modifier
+                .testTag("ForecastButton")
         ) {
             Text("Check Forecast")
         }
@@ -419,7 +421,8 @@ fun MyLocationButton(){
         ),
         shape = CircleShape,
         modifier = Modifier
-            .size(60.dp),
+            .size(60.dp)
+            .testTag("LocationButton"),
         contentPadding = PaddingValues(0.dp)
     ) {
         Image(
@@ -429,15 +432,13 @@ fun MyLocationButton(){
     }
 }
 
-
 @Composable
 fun LargeTemp(currentWeather: CurrentWeather){
     val context = LocalContext.current
     val tempVal = currentWeather.main.temp.toInt().toString()
     val tempText = context.getString(R.string.temp)
 
-    Row(
-    ){
+    Row{
         Text(
             text = tempVal,
             fontSize = 160.sp,

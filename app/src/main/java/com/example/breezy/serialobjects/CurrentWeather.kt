@@ -5,21 +5,21 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class CurrentWeather(
-    val coord: Coord,
-    val weather: List<Weather>,
-    val base: String,
-    val main: Main,
+    val coord: Coord = Coord(0.0,0.0),
+    val weather: List<Weather> = listOf(Weather(0,"main","desc","")) ,
+    val base: String = "",
+    val main: Main = Main(0.0,0.0,0.0,0.0,0,0,0,0),
     val visibility: Int? = null,
-    val wind: Wind,
+    val wind: Wind = Wind(0.0,0),
     val rain: Rain? = null,
     val snow: Snow? = null,
-    val clouds: Clouds,
-    val dt: Int,
-    val sys: Sys,
-    val timezone: Int,
-    val id: Int,
-    val name: String,
-    val cod: Int
+    val clouds: Clouds = Clouds(0),
+    val dt: Int = 0,
+    val sys: Sys = Sys(0,0,"",0L,0L),
+    val timezone: Int = 0,
+    val id: Int = 0,
+    val name: String = "",
+    val cod: Int = 0
 
 ) {
 
@@ -84,7 +84,7 @@ data class Clouds(
 data class Sys(
     val type: Int? = -1,
     val id: Int? = -1,
-    val country: String,
+    val country: String = "",
     val sunrise: Long,
     val sunset: Long
 )
