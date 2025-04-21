@@ -1,6 +1,5 @@
 package com.example.breezy.services
 
-import com.example.breezy.serialobjects.Coord
 import com.example.breezy.serialobjects.ZipCoords
 import kotlinx.serialization.json.Json
 import okhttp3.MediaType.Companion.toMediaType

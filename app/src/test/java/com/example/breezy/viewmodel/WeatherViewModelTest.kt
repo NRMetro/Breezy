@@ -1,6 +1,5 @@
 package com.example.breezy.viewmodel
 
-import androidx.compose.runtime.currentCompositionErrors
 import com.example.breezy.serialobjects.City
 import com.example.breezy.serialobjects.Coord
 import com.example.breezy.serialobjects.CurrentWeather
@@ -9,6 +8,7 @@ import com.example.breezy.serialobjects.ZipCoords
 import com.example.breezy.service.WeatherServiceTest
 import com.example.breezy.service.ZipServiceTest
 import com.example.breezy.viewmodels.WeatherViewModel
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -22,6 +22,7 @@ class WeatherViewModelTest{
     private lateinit var viewModel: WeatherViewModel
     private lateinit var dispatcher: TestDispatcher
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     @Before
     fun setup(){
         dispatcher = UnconfinedTestDispatcher()

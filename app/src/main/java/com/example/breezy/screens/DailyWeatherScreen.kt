@@ -64,7 +64,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.platform.testTag
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.breezy.serialobjects.CurrentWeather
 import com.example.breezy.services.LocationService
 import com.example.breezy.viewmodels.LocationViewModel
@@ -172,7 +171,7 @@ fun DailyWeatherScreen(
                     )
             ) {
 
-                Row(){
+                Row{
                     LargeTemp(currentWeather)
                     Column(
                         modifier = Modifier.padding(top = 50.dp)
@@ -439,8 +438,7 @@ fun LargeTemp(currentWeather: CurrentWeather){
     val tempVal = currentWeather.main.temp.toInt().toString()
     val tempText = context.getString(R.string.temp)
 
-    Row(
-    ){
+    Row{
         Text(
             text = tempVal,
             fontSize = 160.sp,

@@ -1,10 +1,8 @@
 package com.example.breezy
 
-import androidx.compose.runtime.Composable
-import androidx.compose.ui.test.assertCountEquals
+
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
-import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
@@ -23,6 +21,7 @@ import com.example.breezy.serialobjects.ZipCoords
 import com.example.breezy.viewmodels.LocationViewModel
 import com.example.breezy.viewmodels.WeatherViewModel
 import junit.framework.TestCase.assertEquals
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import org.junit.Rule
 import org.junit.Test
@@ -33,6 +32,7 @@ class DailyWeatherScreenTest {
 
     private val weatherService = WeatherServiceTest()
     private val zipService = ZipServiceTest()
+    @OptIn(ExperimentalCoroutinesApi::class)
     private val dispatcher = UnconfinedTestDispatcher()
     private val locationViewModel = LocationViewModel(
         dispatcher = dispatcher

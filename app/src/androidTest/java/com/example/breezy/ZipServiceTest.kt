@@ -4,7 +4,7 @@ import com.example.breezy.serialobjects.ZipCoords
 import com.example.breezy.services.ZipService
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.ResponseBody
-import retrofit2.Call
+import okhttp3.ResponseBody.Companion.toResponseBody
 import retrofit2.Response
 
 class ZipServiceTest :ZipService {
@@ -15,7 +15,9 @@ class ZipServiceTest :ZipService {
     override suspend fun getZip(zipCode: Int, apiKey: String): Response<ZipCoords> {
         if(shouldFailZip){
             actions.add("Fail Weather")
-            return Response.error(404, ResponseBody.create("application/json".toMediaTypeOrNull(), "{\"error\":\"Not found\"}"))
+            return Response.error(404,
+                "{\"error\":\"Not found\"}".toResponseBody("application/json".toMediaTypeOrNull())
+            )
         }
         else{
             actions.add("Get Weather")
