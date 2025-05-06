@@ -46,7 +46,11 @@ class WeatherViewModel (
                 if(latitude != coords.value?.lat){
                     _coords.value =
                         weather.value?.let {
-                            ZipCoords(0,it.name,latitude,longitude, it.sys.country)
+                            it.sys.country?.let { it1 ->
+                                ZipCoords(0,it.name,latitude,longitude,
+                                    it1
+                                )
+                            }
                         }
                 }
 

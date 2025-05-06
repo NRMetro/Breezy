@@ -84,7 +84,7 @@ data class Clouds(
 data class Sys(
     val type: Int? = -1,
     val id: Int? = -1,
-    val country: String,
+    val country: String? = "",
     val sunrise: Long,
     val sunset: Long
 )
